@@ -5,17 +5,28 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-US", {
+function formatINR(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
-  }).format(price);
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
+
+const GST_RATE = 0.18;
+const FREE_DELIVERY_THRESHOLD = 499;
+const DELIVERY_CHARGE = 50;
 
 export default function Cart() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice } =
     useCart();
   const navigate = useNavigate();
+
+  const subtotal = totalPrice;
+  const gst = Math.round(subtotal * GST_RATE);
+  const deliveryCharge =
+    subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+  const total = subtotal + gst + deliveryCharge;
 
   if (items.length === 0) {
     return (
@@ -130,14 +141,14 @@ export default function Cart() {
               </div>
               <div className="text-right">
                 <span className="font-bold text-accent text-base">
-                  {formatPrice(
+                  {formatINR(
                     (item.product.salePrice ?? item.product.price) *
                       item.quantity,
                   )}
                 </span>
                 {item.quantity > 1 && (
                   <p className="text-xs text-muted-foreground">
-                    {formatPrice(item.product.salePrice ?? item.product.price)}{" "}
+                    {formatINR(item.product.salePrice ?? item.product.price)}{" "}
                     each
                   </p>
                 )}
@@ -154,33 +165,43 @@ export default function Cart() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal ({totalItems} items)</span>
-              <span>{formatPrice(totalPrice)}</span>
+              <span>{formatINR(subtotal)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>Shipping</span>
-              <span className="text-accent font-medium">
-                {totalPrice >= 49 ? "FREE" : formatPrice(5.99)}
+              <span>GST (18%)</span>
+              <span>{formatINR(gst)}</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Delivery</span>
+              <span
+                className={
+                  deliveryCharge === 0
+                    ? "text-[color:var(--accent)] font-medium"
+                    : "text-muted-foreground"
+                }
+              >
+                {deliveryCharge === 0 ? "FREE" : formatINR(deliveryCharge)}
               </span>
             </div>
-            {totalPrice < 49 && (
+            {deliveryCharge > 0 && (
               <p className="text-xs text-muted-foreground">
-                Add {formatPrice(49 - totalPrice)} more for free shipping
+                Add {formatINR(FREE_DELIVERY_THRESHOLD - subtotal)} more for
+                free delivery
               </p>
             )}
             <Separator className="my-2" />
             <div className="flex justify-between font-bold text-base text-foreground">
               <span>Total</span>
-              <span>
-                {formatPrice(totalPrice + (totalPrice >= 49 ? 0 : 5.99))}
-              </span>
+              <span>{formatINR(total)}</span>
             </div>
           </div>
           <Button
             type="button"
+            asChild
             className="w-full mt-6 bg-accent hover:bg-accent/90 text-accent-foreground font-medium"
             data-ocid="cart.checkout_button"
           >
-            Proceed to Checkout
+            <Link to="/checkout">Proceed to Checkout</Link>
           </Button>
           <Button
             asChild

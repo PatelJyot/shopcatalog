@@ -23,4 +23,24 @@ module {
     isFeatured : Bool;
     sellerName : Text;
   };
+
+  public type SearchParams = {
+    searchQuery : Text;
+    categories : [Text];
+    minPrice : Float;
+    maxPrice : Float;
+    brands : [Text];
+    minRating : Float;
+    inStock : Bool;
+    sortBy : Text;
+    page : Nat;
+    pageSize : Nat;
+  };
+
+  public type SearchResult = {
+    products : [Product];
+    total : Nat;
+    page : Nat;
+    pageSize : Nat;
+  };
 }

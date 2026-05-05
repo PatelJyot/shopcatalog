@@ -77,7 +77,7 @@ export default function Footer() {
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               ShopCentral is the place to discover unique products from top
-              brands and modern collections. Free shipping on orders over $49.
+              brands and modern collections. Free delivery on orders over ₹499.
             </p>
           </div>
         </div>

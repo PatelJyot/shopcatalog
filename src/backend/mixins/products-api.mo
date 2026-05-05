@@ -28,4 +28,19 @@ mixin (products : List.List<Types.Product>) {
   public query func getDeals() : async [Types.Product] {
     ProductsLib.listDeals(products);
   };
+
+  /// Search and filter products with pagination
+  public query func searchProducts(params : Types.SearchParams) : async Types.SearchResult {
+    ProductsLib.searchProducts(products, params);
+  };
+
+  /// Get unique brand names from the catalog
+  public query func getBrands() : async [Text] {
+    ProductsLib.getBrands(products);
+  };
+
+  /// Get up to 8 lightweight search suggestions by title/brand match
+  public query func getSearchSuggestions(q : Text) : async [Types.Product] {
+    ProductsLib.getSearchSuggestions(products, q);
+  };
 }

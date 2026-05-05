@@ -1,9 +1,14 @@
 import List "mo:core/List";
 import Types "../types/products";
+import Set "mo:core/Set";
+import Float "mo:core/Float";
+import Array "mo:core/Array";
 
 module {
   public type Product = Types.Product;
   public type Category = Types.Category;
+  public type SearchParams = Types.SearchParams;
+  public type SearchResult = Types.SearchResult;
 
   /// Return all products as an immutable array
   public func listAll(products : List.List<Product>) : [Product] {
@@ -28,6 +33,152 @@ module {
   /// Find a single product by its numeric ID
   public func getById(products : List.List<Product>, id : Nat) : ?Product {
     products.find(func(p) { p.id == id });
+  };
+
+  /// Convert a Category variant to its Text name
+  func categoryToText(cat : Category) : Text {
+    switch cat {
+      case (#Electronics) "Electronics";
+      case (#Fashion) "Fashion";
+      case (#Grocery) "Grocery";
+      case (#Books) "Books";
+      case (#Home) "Home";
+    };
+  };
+
+  /// Case-insensitive partial match helper
+  func containsIgnoreCase(haystack : Text, needle : Text) : Bool {
+    if (needle == "") return true;
+    haystack.toLower().contains(#text (needle.toLower()));
+  };
+
+  /// Return unique brand strings across all products
+  public func getBrands(products : List.List<Product>) : [Text] {
+    let seen = Set.empty<Text>();
+    let result = List.empty<Text>();
+    for (p in products.values()) {
+      if (not seen.contains(p.brand)) {
+        seen.add(p.brand);
+        result.add(p.brand);
+      };
+    };
+    result.toArray();
+  };
+
+  /// Return up to 8 products whose title or brand partially matches the query
+  public func getSearchSuggestions(products : List.List<Product>, searchQuery : Text) : [Product] {
+    if (searchQuery == "") return [];
+    let q = searchQuery.toLower();
+    var count = 0;
+    let result = List.empty<Product>();
+    label search for (p in products.values()) {
+      if (count >= 8) break search;
+      if (containsIgnoreCase(p.title, q) or containsIgnoreCase(p.brand, q)) {
+        result.add(p);
+        count += 1;
+      };
+    };
+    result.toArray();
+  };
+
+  /// Search and filter products, returning a paginated SearchResult
+  public func searchProducts(products : List.List<Product>, params : SearchParams) : SearchResult {
+    let q = params.searchQuery.toLower();
+
+    // Filter pass
+    let filtered = products.filter(func(p) {
+      // Query match (empty query matches all)
+      let queryMatch = q == "" or
+        containsIgnoreCase(p.title, q) or
+        containsIgnoreCase(p.description, q) or
+        containsIgnoreCase(p.brand, q);
+      if (not queryMatch) return false;
+
+      // Category filter
+      if (params.categories.size() > 0) {
+        let catText = categoryToText(p.category);
+        let catMatch = params.categories.find(func(c) { c == catText });
+        if (catMatch == null) return false;
+      };
+
+      // Brand filter
+      if (params.brands.size() > 0) {
+        let brandMatch = params.brands.find(func(b) { b == p.brand });
+        if (brandMatch == null) return false;
+      };
+
+      // Price range
+      let effectivePrice = switch (p.salePrice) {
+        case (?sp) sp;
+        case null p.price;
+      };
+      if (params.minPrice > 0.0 and effectivePrice < params.minPrice) return false;
+      if (params.maxPrice > 0.0 and effectivePrice > params.maxPrice) return false;
+
+      // Rating
+      if (params.minRating > 0.0 and p.rating < params.minRating) return false;
+
+      // Stock
+      if (params.inStock and p.stockQuantity == 0) return false;
+
+      true;
+    });
+
+    // Sort pass
+    let sorted = switch (params.sortBy) {
+      case "price-asc" {
+        filtered.sort(func(a, b) {
+          let pa = switch (a.salePrice) { case (?sp) sp; case null a.price };
+          let pb = switch (b.salePrice) { case (?sp) sp; case null b.price };
+          Float.compare(pa, pb);
+        });
+      };
+      case "price-desc" {
+        filtered.sort(func(a, b) {
+          let pa = switch (a.salePrice) { case (?sp) sp; case null a.price };
+          let pb = switch (b.salePrice) { case (?sp) sp; case null b.price };
+          Float.compare(pb, pa);
+        });
+      };
+      case "rating-desc" {
+        filtered.sort(func(a, b) { Float.compare(b.rating, a.rating) });
+      };
+      case "newest" {
+        // Higher id = newer
+        filtered.sort(func(a, b) {
+          if (a.id > b.id) #less
+          else if (a.id < b.id) #greater
+          else #equal;
+        });
+      };
+      // "relevance": title match first, then others
+      case _ {
+        if (q == "") {
+          filtered;
+        } else {
+          filtered.sort(func(a, b) {
+            let aTitle = containsIgnoreCase(a.title, q);
+            let bTitle = containsIgnoreCase(b.title, q);
+            if (aTitle and not bTitle) #less
+            else if (not aTitle and bTitle) #greater
+            else #equal;
+          });
+        };
+      };
+    };
+
+    let total = sorted.size();
+    let pageSize = if (params.pageSize == 0) 48 else params.pageSize;
+    let startIdx = params.page * pageSize;
+
+    let pageProducts = if (startIdx >= total) {
+      [];
+    } else {
+      let endIdx = if (startIdx + pageSize > total) total else startIdx + pageSize;
+      sorted.sliceToArray(startIdx, endIdx);
+    };
+
+    { products = pageProducts; total; page = params.page; pageSize };
   };
 
   /// Seed the products list with sample catalog data

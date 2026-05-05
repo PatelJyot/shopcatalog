@@ -1,7 +1,55 @@
 // Version: 1.0.0
+type AddressSnapshot__825702118 =
+  {
+    addressLine1 : Text;
+    addressLine2 : Text;
+    city : Text;
+    name : Text;
+    phone : Text;
+    pinCode : Text;
+    state : Text
+  };
+type CartItem__1044444615 =
+  {
+    addedAt : Time__900049286;
+    id : Nat;
+    productId : Nat;
+    quantity : Nat;
+    updatedAt : Time__900049286;
+    userId : Principal
+  };
 type Category__8224233 = {#Books; #Electronics; #Fashion; #Grocery; #Home};
+type Int__270357528 = Int__616954475;
+type Int__616954475 = Int;
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
+type OrderItem__241319351 =
+  {
+    image : Text;
+    price : Float;
+    productId : Nat;
+    quantity : Nat;
+    title : Text
+  };
+type OrderStatus__272730104 =
+  {#Cancelled; #Confirmed; #Delivered; #Pending; #Shipped};
+type Order__141779993 =
+  {
+    createdAt : Time__900049286;
+    deliveryCharge : Float;
+    id : Nat;
+    items : [OrderItem__241319351];
+    orderStatus : OrderStatus__272730104;
+    paymentMethod : PaymentMethod__972042942;
+    paymentStatus : PaymentStatus__889961532;
+    shippingAddress : AddressSnapshot__825702118;
+    subtotal : Float;
+    taxAmount : Float;
+    totalPrice : Float;
+    userId : Principal
+  };
+type PaymentMethod__972042942 = {#COD; #Card : Text; #UPI : Text};
+type PaymentStatus__889961532 = {#Failed; #Paid; #Pending};
 type Product__750902660 =
   {
     brand : Text;
@@ -19,7 +67,44 @@ type Product__750902660 =
     stockQuantity : Nat;
     title : Text
   };
+type Time__796480547 = Int__270357528;
+type Time__900049286 = Time__796480547;
+type UserAddress__496159920 =
+  {
+    addressLine1 : Text;
+    addressLine2 : Text;
+    city : Text;
+    createdAt : Time__900049286;
+    id : Nat;
+    isDefault : Bool;
+    name : Text;
+    phone : Text;
+    pinCode : Text;
+    state : Text;
+    userId : Principal
+  };
 actor {
+  stable addresses :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?UserAddress__496159920]];
+      var elementIndex : Nat__490723111
+    };
+  stable cartItems :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?CartItem__1044444615]];
+      var elementIndex : Nat__490723111
+    };
+  stable var nextAddressId : Nat;
+  stable var nextCartId : Nat;
+  stable var nextOrderId : Nat;
+  stable orders :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Order__141779993]];
+      var elementIndex : Nat__490723111
+    };
   stable products :
     {
       var blockIndex : Nat__490723111;

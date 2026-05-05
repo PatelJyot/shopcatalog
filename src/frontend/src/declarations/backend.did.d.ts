@@ -10,11 +10,85 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AddressSnapshot {
+  'city' : string,
+  'name' : string,
+  'state' : string,
+  'addressLine1' : string,
+  'addressLine2' : string,
+  'pinCode' : string,
+  'phone' : string,
+}
+export interface CartItem {
+  'id' : bigint,
+  'userId' : Principal,
+  'productId' : bigint,
+  'updatedAt' : Time,
+  'addedAt' : Time,
+  'quantity' : bigint,
+}
+export interface CartItemView {
+  'id' : bigint,
+  'title' : string,
+  'productId' : bigint,
+  'updatedAt' : Time,
+  'addedAt' : Time,
+  'quantity' : bigint,
+  'salePrice' : [] | [number],
+  'image' : string,
+  'price' : number,
+}
 export type Category = { 'Home' : null } |
   { 'Grocery' : null } |
   { 'Books' : null } |
   { 'Fashion' : null } |
   { 'Electronics' : null };
+export interface CreateAddressRequest {
+  'city' : string,
+  'name' : string,
+  'state' : string,
+  'addressLine1' : string,
+  'addressLine2' : string,
+  'isDefault' : boolean,
+  'pinCode' : string,
+  'phone' : string,
+}
+export interface CreateOrderRequest {
+  'paymentMethod' : PaymentMethod,
+  'shippingAddress' : AddressSnapshot,
+}
+export interface Order {
+  'id' : bigint,
+  'deliveryCharge' : number,
+  'paymentStatus' : PaymentStatus,
+  'paymentMethod' : PaymentMethod,
+  'orderStatus' : OrderStatus,
+  'userId' : Principal,
+  'createdAt' : Time,
+  'shippingAddress' : AddressSnapshot,
+  'items' : Array<OrderItem>,
+  'taxAmount' : number,
+  'totalPrice' : number,
+  'subtotal' : number,
+}
+export interface OrderItem {
+  'title' : string,
+  'productId' : bigint,
+  'quantity' : bigint,
+  'image' : string,
+  'price' : number,
+}
+export type OrderStatus = { 'Delivered' : null } |
+  { 'Confirmed' : null } |
+  { 'Cancelled' : null } |
+  { 'Shipped' : null } |
+  { 'Pending' : null };
+export type PaymentMethod = { 'COD' : null } |
+  { 'UPI' : string } |
+  { 'Card' : string };
+export type PaymentStatus = { 'Failed' : null } |
+  { 'Paid' : null } |
+  { 'Pending' : null };
 export interface Product {
   'id' : bigint,
   'sku' : string,
@@ -31,12 +105,57 @@ export interface Product {
   'reviewCount' : bigint,
   'images' : Array<string>,
 }
+export interface SearchParams {
+  'categories' : Array<string>,
+  'brands' : Array<string>,
+  'minRating' : number,
+  'inStock' : boolean,
+  'sortBy' : string,
+  'page' : bigint,
+  'pageSize' : bigint,
+  'maxPrice' : number,
+  'minPrice' : number,
+  'searchQuery' : string,
+}
+export interface SearchResult {
+  'total' : bigint,
+  'page' : bigint,
+  'pageSize' : bigint,
+  'products' : Array<Product>,
+}
+export type Time = bigint;
+export interface UserAddress {
+  'id' : bigint,
+  'city' : string,
+  'userId' : Principal,
+  'name' : string,
+  'createdAt' : Time,
+  'state' : string,
+  'addressLine1' : string,
+  'addressLine2' : string,
+  'isDefault' : boolean,
+  'pinCode' : string,
+  'phone' : string,
+}
 export interface _SERVICE {
+  'addToCart' : ActorMethod<[bigint, bigint], CartItem>,
+  'clearCart' : ActorMethod<[], undefined>,
+  'createAddress' : ActorMethod<[CreateAddressRequest], UserAddress>,
+  'createOrder' : ActorMethod<[CreateOrderRequest], Order>,
+  'getBrands' : ActorMethod<[], Array<string>>,
+  'getCart' : ActorMethod<[], Array<CartItemView>>,
   'getDeals' : ActorMethod<[], Array<Product>>,
   'getFeaturedProducts' : ActorMethod<[], Array<Product>>,
+  'getOrder' : ActorMethod<[bigint], [] | [Order]>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
   'getProducts' : ActorMethod<[], Array<Product>>,
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
+  'getSavedAddresses' : ActorMethod<[], Array<UserAddress>>,
+  'getSearchSuggestions' : ActorMethod<[string], Array<Product>>,
+  'getUserOrders' : ActorMethod<[], Array<Order>>,
+  'removeFromCart' : ActorMethod<[bigint], boolean>,
+  'searchProducts' : ActorMethod<[SearchParams], SearchResult>,
+  'updateCartQuantity' : ActorMethod<[bigint, bigint], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

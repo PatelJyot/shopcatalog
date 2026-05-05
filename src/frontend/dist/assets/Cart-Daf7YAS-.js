@@ -1,4 +1,6 @@
-import { c as createLucideIcon, r as reactExports, j as jsxRuntimeExports, A as createSlot, z as cn, e as useCart, b as useNavigate, S as ShoppingCart, a as Button, L as Link, f as ue } from "./index-CbaAsIMs.js";
+import { c as createLucideIcon, k as useCart, e as useNavigate, j as jsxRuntimeExports, S as ShoppingCart, b as Button, L as Link, l as ue } from "./index-WnByi3p_.js";
+import { S as Separator } from "./separator-CFVLorHG.js";
+import "./index-jbvIYv-3.js";
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -24,90 +26,23 @@ const __iconNode = [
   ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
 ];
 const Trash2 = createLucideIcon("trash-2", __iconNode);
-var NODES = [
-  "a",
-  "button",
-  "div",
-  "form",
-  "h2",
-  "h3",
-  "img",
-  "input",
-  "label",
-  "li",
-  "nav",
-  "ol",
-  "p",
-  "select",
-  "span",
-  "svg",
-  "ul"
-];
-var Primitive = NODES.reduce((primitive, node) => {
-  const Slot = createSlot(`Primitive.${node}`);
-  const Node = reactExports.forwardRef((props, forwardedRef) => {
-    const { asChild, ...primitiveProps } = props;
-    const Comp = asChild ? Slot : node;
-    if (typeof window !== "undefined") {
-      window[Symbol.for("radix-ui")] = true;
-    }
-    return /* @__PURE__ */ jsxRuntimeExports.jsx(Comp, { ...primitiveProps, ref: forwardedRef });
-  });
-  Node.displayName = `Primitive.${node}`;
-  return { ...primitive, [node]: Node };
-}, {});
-var NAME = "Separator";
-var DEFAULT_ORIENTATION = "horizontal";
-var ORIENTATIONS = ["horizontal", "vertical"];
-var Separator$1 = reactExports.forwardRef((props, forwardedRef) => {
-  const { decorative, orientation: orientationProp = DEFAULT_ORIENTATION, ...domProps } = props;
-  const orientation = isValidOrientation(orientationProp) ? orientationProp : DEFAULT_ORIENTATION;
-  const ariaOrientation = orientation === "vertical" ? orientation : void 0;
-  const semanticProps = decorative ? { role: "none" } : { "aria-orientation": ariaOrientation, role: "separator" };
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Primitive.div,
-    {
-      "data-orientation": orientation,
-      ...semanticProps,
-      ...domProps,
-      ref: forwardedRef
-    }
-  );
-});
-Separator$1.displayName = NAME;
-function isValidOrientation(orientation) {
-  return ORIENTATIONS.includes(orientation);
-}
-var Root = Separator$1;
-function Separator({
-  className,
-  orientation = "horizontal",
-  decorative = true,
-  ...props
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    Root,
-    {
-      "data-slot": "separator",
-      decorative,
-      orientation,
-      className: cn(
-        "bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
-        className
-      ),
-      ...props
-    }
-  );
-}
-function formatPrice(price) {
-  return new Intl.NumberFormat("en-US", {
+function formatINR(amount) {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD"
-  }).format(price);
+    currency: "INR",
+    maximumFractionDigits: 0
+  }).format(amount);
 }
+const GST_RATE = 0.18;
+const FREE_DELIVERY_THRESHOLD = 499;
+const DELIVERY_CHARGE = 50;
 function Cart() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
   const navigate = useNavigate();
+  const subtotal = totalPrice;
+  const gst = Math.round(subtotal * GST_RATE);
+  const deliveryCharge = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+  const total = subtotal + gst + deliveryCharge;
   if (items.length === 0) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
@@ -234,11 +169,11 @@ function Cart() {
               ] })
             ] }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-right", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-bold text-accent text-base", children: formatPrice(
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-bold text-accent text-base", children: formatINR(
                 (item.product.salePrice ?? item.product.price) * item.quantity
               ) }),
               item.quantity > 1 && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground", children: [
-                formatPrice(item.product.salePrice ?? item.product.price),
+                formatINR(item.product.salePrice ?? item.product.price),
                 " ",
                 "each"
               ] })
@@ -256,30 +191,41 @@ function Cart() {
               totalItems,
               " items)"
             ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatPrice(totalPrice) })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatINR(subtotal) })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between text-muted-foreground", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Shipping" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-accent font-medium", children: totalPrice >= 49 ? "FREE" : formatPrice(5.99) })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "GST (18%)" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatINR(gst) })
           ] }),
-          totalPrice < 49 && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between text-muted-foreground", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Delivery" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "span",
+              {
+                className: deliveryCharge === 0 ? "text-[color:var(--accent)] font-medium" : "text-muted-foreground",
+                children: deliveryCharge === 0 ? "FREE" : formatINR(deliveryCharge)
+              }
+            )
+          ] }),
+          deliveryCharge > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground", children: [
             "Add ",
-            formatPrice(49 - totalPrice),
-            " more for free shipping"
+            formatINR(FREE_DELIVERY_THRESHOLD - subtotal),
+            " more for free delivery"
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(Separator, { className: "my-2" }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between font-bold text-base text-foreground", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Total" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatPrice(totalPrice + (totalPrice >= 49 ? 0 : 5.99)) })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatINR(total) })
           ] })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           Button,
           {
             type: "button",
+            asChild: true,
             className: "w-full mt-6 bg-accent hover:bg-accent/90 text-accent-foreground font-medium",
             "data-ocid": "cart.checkout_button",
-            children: "Proceed to Checkout"
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/checkout", children: "Proceed to Checkout" })
           }
         ),
         /* @__PURE__ */ jsxRuntimeExports.jsx(

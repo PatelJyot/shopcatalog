@@ -13,6 +13,10 @@ const HomePage = lazy(() => import("@/pages/Home"));
 const ProductsPage = lazy(() => import("@/pages/Products"));
 const ProductDetailPage = lazy(() => import("@/pages/ProductDetail"));
 const CartPage = lazy(() => import("@/pages/Cart"));
+const SearchPage = lazy(() => import("@/pages/Search"));
+const CategoryPage = lazy(() => import("@/pages/Category"));
+const CheckoutPage = lazy(() => import("@/pages/Checkout"));
+const OrderSuccessPage = lazy(() => import("@/pages/OrderSuccess"));
 
 function PageLoader() {
   return (
@@ -70,11 +74,55 @@ const cartRoute = createRoute({
   ),
 });
 
+const searchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/search",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <SearchPage />
+    </Suspense>
+  ),
+});
+
+const categoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/category/$name",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <CategoryPage />
+    </Suspense>
+  ),
+});
+
+const checkoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/checkout",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <CheckoutPage />
+    </Suspense>
+  ),
+});
+
+const orderSuccessRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/order-success",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <OrderSuccessPage />
+    </Suspense>
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   productsRoute,
   productDetailRoute,
   cartRoute,
+  searchRoute,
+  categoryRoute,
+  checkoutRoute,
+  orderSuccessRoute,
 ]);
 
 const router = createRouter({ routeTree });

@@ -1,3 +1,38 @@
+type UserAddress = 
+ record {
+   addressLine1: text;
+   addressLine2: text;
+   city: text;
+   createdAt: Time;
+   id: nat;
+   isDefault: bool;
+   name: text;
+   phone: text;
+   pinCode: text;
+   state: text;
+   userId: principal;
+ };
+type Time = int;
+type SearchResult = 
+ record {
+   page: nat;
+   pageSize: nat;
+   products: vec Product;
+   total: nat;
+ };
+type SearchParams = 
+ record {
+   brands: vec text;
+   categories: vec text;
+   inStock: bool;
+   maxPrice: float64;
+   minPrice: float64;
+   minRating: float64;
+   page: nat;
+   pageSize: nat;
+   searchQuery: text;
+   sortBy: text;
+ };
 type Product = 
  record {
    brand: text;
@@ -15,6 +50,65 @@ type Product =
    stockQuantity: nat;
    title: text;
  };
+type PaymentStatus = 
+ variant {
+   Failed;
+   Paid;
+   Pending;
+ };
+type PaymentMethod = 
+ variant {
+   COD;
+   Card: text;
+   UPI: text;
+ };
+type OrderStatus = 
+ variant {
+   Cancelled;
+   Confirmed;
+   Delivered;
+   Pending;
+   Shipped;
+ };
+type OrderItem = 
+ record {
+   image: text;
+   price: float64;
+   productId: nat;
+   quantity: nat;
+   title: text;
+ };
+type Order = 
+ record {
+   createdAt: Time;
+   deliveryCharge: float64;
+   id: nat;
+   items: vec OrderItem;
+   orderStatus: OrderStatus;
+   paymentMethod: PaymentMethod;
+   paymentStatus: PaymentStatus;
+   shippingAddress: AddressSnapshot;
+   subtotal: float64;
+   taxAmount: float64;
+   totalPrice: float64;
+   userId: principal;
+ };
+type CreateOrderRequest = 
+ record {
+   paymentMethod: PaymentMethod;
+   shippingAddress: AddressSnapshot;
+ };
+type CreateAddressRequest = 
+ record {
+   addressLine1: text;
+   addressLine2: text;
+   city: text;
+   isDefault: bool;
+   name: text;
+   phone: text;
+   pinCode: text;
+   state: text;
+ };
 type Category = 
  variant {
    Books;
@@ -23,10 +117,54 @@ type Category =
    Grocery;
    Home;
  };
+type CartItemView = 
+ record {
+   addedAt: Time;
+   id: nat;
+   image: text;
+   price: float64;
+   productId: nat;
+   quantity: nat;
+   salePrice: opt float64;
+   title: text;
+   updatedAt: Time;
+ };
+type CartItem = 
+ record {
+   addedAt: Time;
+   id: nat;
+   productId: nat;
+   quantity: nat;
+   updatedAt: Time;
+   userId: principal;
+ };
+type AddressSnapshot = 
+ record {
+   addressLine1: text;
+   addressLine2: text;
+   city: text;
+   name: text;
+   phone: text;
+   pinCode: text;
+   state: text;
+ };
 service : {
+  addToCart: (productId: nat, quantity: nat) -> (CartItem);
+  clearCart: () -> ();
+  createAddress: (req: CreateAddressRequest) -> (UserAddress);
+  createOrder: (req: CreateOrderRequest) -> (Order);
+  getBrands: () -> (vec text) query;
+  getCart: () -> (vec CartItemView) query;
   getDeals: () -> (vec Product) query;
   getFeaturedProducts: () -> (vec Product) query;
+  getOrder: (orderId: nat) -> (opt Order) query;
   getProduct: (id: nat) -> (opt Product) query;
   getProducts: () -> (vec Product) query;
   getProductsByCategory: (category: Category) -> (vec Product) query;
+  getSavedAddresses: () -> (vec UserAddress) query;
+  getSearchSuggestions: (q: text) -> (vec Product) query;
+  getUserOrders: () -> (vec Order) query;
+  removeFromCart: (cartItemId: nat) -> (bool);
+  searchProducts: (params: SearchParams) -> (SearchResult) query;
+  updateCartQuantity: (cartItemId: nat, quantity: nat) -> (bool);
 }

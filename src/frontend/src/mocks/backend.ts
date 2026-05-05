@@ -1,5 +1,5 @@
 import type { backendInterface } from "../backend";
-import { Category } from "../backend";
+import { Category, OrderStatus, PaymentStatus } from "../backend";
 
 const sampleProducts = [
   {
@@ -229,4 +229,113 @@ export const mockBackend: backendInterface = {
     sampleProducts.find((p) => p.id === id) ?? null,
   getProductsByCategory: async (category: Category) =>
     sampleProducts.filter((p) => p.category === category),
+  getBrands: async () =>
+    Array.from(new Set(sampleProducts.map((p) => p.brand))).sort(),
+  getSearchSuggestions: async (q: string) => {
+    const lower = q.toLowerCase();
+    return sampleProducts
+      .filter(
+        (p) =>
+          p.title.toLowerCase().includes(lower) ||
+          p.brand.toLowerCase().includes(lower),
+      )
+      .slice(0, 8);
+  },
+  addToCart: async (_productId: bigint, _quantity: bigint) => ({
+    id: BigInt(1),
+    userId: {} as import("@icp-sdk/core/principal").Principal,
+    productId: _productId,
+    quantity: _quantity,
+    addedAt: BigInt(Date.now() * 1_000_000),
+    updatedAt: BigInt(Date.now() * 1_000_000),
+  }),
+  clearCart: async () => {},
+  createAddress: async (req) => ({
+    id: BigInt(1),
+    userId: {} as import("@icp-sdk/core/principal").Principal,
+    name: req.name,
+    phone: req.phone,
+    addressLine1: req.addressLine1,
+    addressLine2: req.addressLine2,
+    city: req.city,
+    state: req.state,
+    pinCode: req.pinCode,
+    isDefault: req.isDefault,
+    createdAt: BigInt(Date.now() * 1_000_000),
+  }),
+  createOrder: async (req) => ({
+    id: BigInt(Math.floor(Math.random() * 100000)),
+    userId: {} as import("@icp-sdk/core/principal").Principal,
+    items: [],
+    subtotal: 0,
+    taxAmount: 0,
+    deliveryCharge: 0,
+    totalPrice: 0,
+    shippingAddress: req.shippingAddress,
+    paymentMethod: req.paymentMethod,
+    paymentStatus: PaymentStatus.Pending,
+    orderStatus: OrderStatus.Confirmed,
+    createdAt: BigInt(Date.now() * 1_000_000),
+  }),
+  getCart: async () => [
+    {
+      id: BigInt(1),
+      productId: BigInt(1),
+      title: "Apple AirPods Pro (2nd Generation)",
+      image: "https://picsum.photos/seed/airpods/400/400",
+      price: 249.0,
+      salePrice: 189.99,
+      quantity: BigInt(1),
+      addedAt: BigInt(Date.now() * 1_000_000),
+      updatedAt: BigInt(Date.now() * 1_000_000),
+    },
+    {
+      id: BigInt(2),
+      productId: BigInt(10),
+      title: "Instant Pot Duo 7-in-1 Electric Pressure Cooker, 6Qt",
+      image: "https://picsum.photos/seed/instantpot/400/400",
+      price: 99.95,
+      salePrice: 79.95,
+      quantity: BigInt(2),
+      addedAt: BigInt(Date.now() * 1_000_000),
+      updatedAt: BigInt(Date.now() * 1_000_000),
+    },
+  ],
+  getOrder: async (_orderId: bigint) => null,
+    getUserOrders: async () => [],
+  removeFromCart: async (_cartItemId: bigint) => true,
+  getSavedAddresses: async () => [],
+  updateCartQuantity: async (_cartItemId: bigint, _quantity: bigint) => true,
+  searchProducts: async (params) => {
+    let results = [...sampleProducts];
+    if (params.searchQuery) {
+      const lower = params.searchQuery.toLowerCase();
+      results = results.filter(
+        (p) =>
+          p.title.toLowerCase().includes(lower) ||
+          p.brand.toLowerCase().includes(lower),
+      );
+    }
+    if (params.categories.length > 0) {
+      results = results.filter((p) =>
+        params.categories.includes(p.category),
+      );
+    }
+    if (params.brands.length > 0) {
+      results = results.filter((p) => params.brands.includes(p.brand));
+    }
+    if (params.inStock) {
+      results = results.filter((p) => p.stockQuantity > BigInt(0));
+    }
+    const total = BigInt(results.length);
+    const page = Number(params.page);
+    const pageSize = Number(params.pageSize);
+    const start = (page - 1) * pageSize;
+    return {
+      products: results.slice(start, start + pageSize),
+      total,
+      page: params.page,
+      pageSize: params.pageSize,
+    };
+  },
 };

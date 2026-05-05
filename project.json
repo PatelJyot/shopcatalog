@@ -1,20 +1,25 @@
 {
-  "overview": "An Amazon-style product catalog with featured homepage, product listing grid with filters, and detailed product pages — all styled with white backgrounds and orange accents.",
+  "overview": "An Amazon-style e-commerce product catalog with a complete search and filter system. Features real-time search suggestions in the navigation bar, a dedicated search results page with advanced sidebar filters, and category browsing pages — all with shareable URL parameters.",
   "features": [
-    "Products database with full catalog fields (title, price, sale price, images, category, brand, SKU, rating)",
-    "Homepage with hero banner, featured products grid, category navigation row, and deals section",
-    "Product listing page with grid view, category filtering, and sort options",
-    "Product detail page with image gallery, sale price strikethrough, stock status, quantity selector, Add to Cart and Buy Now",
-    "Amazon-inspired design: white background, orange (#FF9900) accent color"
+    "Real-time search dropdown with product suggestions as you type",
+    "Search results page with left sidebar filters (category, price range, brand, rating, stock)",
+    "Sort options: Relevance, Price Low-High, Price High-Low, Rating, Newest",
+    "Category pages with same filter sidebar",
+    "Result count display (e.g. 1-48 of 500 results)",
+    "No-results state with suggestions",
+    "All filters shareable via URL parameters",
+    "4-column responsive product grid",
+    "Orange (#FF9900) accents on white background matching Amazon style"
   ],
-  "category": "ecommerce",
+  "category": "e-commerce",
   "tags": [
+    "amazon-clone",
+    "e-commerce",
+    "search",
+    "filters",
     "product-catalog",
-    "ecommerce",
-    "amazon-style",
-    "shopping",
     "react",
     "motoko"
   ],
-  "last_updated": "2026-05-05T14:13:29.365Z"
+  "last_updated": "2026-05-05T14:41:13.889Z"
 }
