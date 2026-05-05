@@ -1,0 +1,20 @@
+{
+  "overview": "An Amazon-style product catalog with featured homepage, product listing grid with filters, and detailed product pages — all styled with white backgrounds and orange accents.",
+  "features": [
+    "Products database with full catalog fields (title, price, sale price, images, category, brand, SKU, rating)",
+    "Homepage with hero banner, featured products grid, category navigation row, and deals section",
+    "Product listing page with grid view, category filtering, and sort options",
+    "Product detail page with image gallery, sale price strikethrough, stock status, quantity selector, Add to Cart and Buy Now",
+    "Amazon-inspired design: white background, orange (#FF9900) accent color"
+  ],
+  "category": "ecommerce",
+  "tags": [
+    "product-catalog",
+    "ecommerce",
+    "amazon-style",
+    "shopping",
+    "react",
+    "motoko"
+  ],
+  "last_updated": "2026-05-05T14:13:29.365Z"
+}

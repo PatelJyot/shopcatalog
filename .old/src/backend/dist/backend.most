@@ -1,0 +1,29 @@
+// Version: 1.0.0
+type Category__8224233 = {#Books; #Electronics; #Fashion; #Grocery; #Home};
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Product__750902660 =
+  {
+    brand : Text;
+    category : Category__8224233;
+    description : Text;
+    id : Nat;
+    images : [Text];
+    isFeatured : Bool;
+    price : Float;
+    rating : Float;
+    reviewCount : Nat;
+    salePrice : ?Float;
+    sellerName : Text;
+    sku : Text;
+    stockQuantity : Nat;
+    title : Text
+  };
+actor {
+  stable products :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Product__750902660]];
+      var elementIndex : Nat__490723111
+    }
+};

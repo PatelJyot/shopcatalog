@@ -1,0 +1,32 @@
+type Product = 
+ record {
+   brand: text;
+   category: Category;
+   description: text;
+   id: nat;
+   images: vec text;
+   isFeatured: bool;
+   price: float64;
+   rating: float64;
+   reviewCount: nat;
+   salePrice: opt float64;
+   sellerName: text;
+   sku: text;
+   stockQuantity: nat;
+   title: text;
+ };
+type Category = 
+ variant {
+   Books;
+   Electronics;
+   Fashion;
+   Grocery;
+   Home;
+ };
+service : {
+  getDeals: () -> (vec Product) query;
+  getFeaturedProducts: () -> (vec Product) query;
+  getProduct: (id: nat) -> (opt Product) query;
+  getProducts: () -> (vec Product) query;
+  getProductsByCategory: (category: Category) -> (vec Product) query;
+}
