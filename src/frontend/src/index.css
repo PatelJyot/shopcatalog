@@ -56,6 +56,16 @@
     --chart-3: 0.4 0.07 227;
     --chart-4: 0.83 0.19 84;
     --chart-5: 0.77 0.19 70;
+    --success: 0.66 0.19 142;
+    --warning: 0.78 0.18 61.59;
+    --status-placed: 0.5 0 0;
+    --status-confirmed: 0.714 0.24 61.59;
+    --status-packed: 0.714 0.24 61.59;
+    --status-shipped: 0.714 0.24 61.59;
+    --status-out-for-delivery: 0.78 0.18 61.59;
+    --status-delivered: 0.66 0.19 142;
+    --status-cancelled: 0.55 0.22 25;
+    --status-returned: 0.5 0 0;
 
     --sidebar: 0.99 0 0;
     --sidebar-foreground: 0.2 0 0;
@@ -98,6 +108,16 @@
     --chart-3: 0.77 0.19 70;
     --chart-4: 0.63 0.27 304;
     --chart-5: 0.65 0.25 16;
+    --success: 0.72 0.25 142;
+    --warning: 0.8 0.22 61.59;
+    --status-placed: 0.55 0 0;
+    --status-confirmed: 0.75 0.2 61.59;
+    --status-packed: 0.75 0.2 61.59;
+    --status-shipped: 0.75 0.2 61.59;
+    --status-out-for-delivery: 0.8 0.22 61.59;
+    --status-delivered: 0.72 0.25 142;
+    --status-cancelled: 0.65 0.19 22;
+    --status-returned: 0.55 0 0;
 
     --sidebar: 0.18 0 0;
     --sidebar-foreground: 0.95 0 0;
@@ -131,5 +151,72 @@
 
   .shadow-subtle {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .status-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-medium transition-smooth;
+  }
+
+  .status-placed {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .status-confirmed {
+    @apply bg-accent/10 text-accent;
+  }
+
+  .status-packed {
+    @apply bg-accent/10 text-accent;
+  }
+
+  .status-shipped {
+    @apply bg-accent/10 text-accent;
+  }
+
+  .status-out-for-delivery {
+    @apply bg-warning/10 text-warning;
+  }
+
+  .status-delivered {
+    @apply bg-success/10 text-success;
+  }
+
+  .status-cancelled {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  .status-returned {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .timeline-step {
+    @apply relative flex flex-col items-center gap-2;
+  }
+
+  .timeline-dot {
+    @apply w-2.5 h-2.5 rounded-full border-2 transition-smooth;
+  }
+
+  .timeline-dot.completed {
+    @apply bg-accent border-accent;
+  }
+
+  .timeline-dot.current {
+    @apply bg-success border-success ring-2 ring-success/30;
+  }
+
+  .timeline-dot.pending {
+    @apply bg-border border-border;
+  }
+
+  .timeline-line {
+    @apply absolute top-5 left-1/2 -translate-x-1/2 h-8 w-0.5 transition-smooth;
+  }
+
+  .timeline-line.completed {
+    @apply bg-accent;
+  }
+
+  .timeline-line.pending {
+    @apply bg-border;
   }
 }

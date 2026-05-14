@@ -33,6 +33,28 @@ type SearchParams =
    searchQuery: text;
    sortBy: text;
  };
+type Review = 
+ record {
+   body: text;
+   createdAt: Time;
+   helpfulCount: nat;
+   helpfulVotes: vec HelpfulVote;
+   id: nat;
+   images: vec text;
+   productId: nat;
+   rating: nat;
+   title: text;
+   userId: principal;
+   verifiedPurchase: bool;
+ };
+type RatingDistribution = 
+ record {
+   star1: nat;
+   star2: nat;
+   star3: nat;
+   star4: nat;
+   star5: nat;
+ };
 type Product = 
  record {
    brand: text;
@@ -62,13 +84,30 @@ type PaymentMethod =
    Card: text;
    UPI: text;
  };
+type PaginatedOrders = 
+ record {
+   orders: vec Order;
+   total: nat;
+ };
 type OrderStatus = 
  variant {
-   Cancelled;
-   Confirmed;
-   Delivered;
-   Pending;
-   Shipped;
+   cancelled;
+   confirmed;
+   delivered;
+   outForDelivery;
+   packed;
+   placed;
+   returned;
+   shipped;
+ };
+type OrderNotification = 
+ record {
+   message: text;
+   newStatus: OrderStatus;
+   oldStatus: OrderStatus;
+   orderId: nat;
+   timestamp: Time;
+   userId: principal;
  };
 type OrderItem = 
  record {
@@ -82,6 +121,7 @@ type Order =
  record {
    createdAt: Time;
    deliveryCharge: float64;
+   estimatedDeliveryDate: opt Time;
    id: nat;
    items: vec OrderItem;
    orderStatus: OrderStatus;
@@ -91,7 +131,22 @@ type Order =
    subtotal: float64;
    taxAmount: float64;
    totalPrice: float64;
+   trackingNumber: opt text;
+   updatedAt: Time;
    userId: principal;
+ };
+type HelpfulVote = 
+ record {
+   isHelpful: bool;
+   userId: principal;
+ };
+type CreateReviewRequest = 
+ record {
+   body: text;
+   images: vec text;
+   productId: nat;
+   rating: nat;
+   title: text;
  };
 type CreateOrderRequest = 
  record {
@@ -150,21 +205,30 @@ type AddressSnapshot =
  };
 service : {
   addToCart: (productId: nat, quantity: nat) -> (CartItem);
+  cancelOrder: (orderId: nat) -> (opt Order);
   clearCart: () -> ();
   createAddress: (req: CreateAddressRequest) -> (UserAddress);
   createOrder: (req: CreateOrderRequest) -> (Order);
+  createReview: (req: CreateReviewRequest) -> (Review);
+  getAllOrders: (offset: nat, limit: nat) -> (PaginatedOrders) query;
   getBrands: () -> (vec text) query;
   getCart: () -> (vec CartItemView) query;
   getDeals: () -> (vec Product) query;
   getFeaturedProducts: () -> (vec Product) query;
   getOrder: (orderId: nat) -> (opt Order) query;
+  getOrderNotifications: () -> (vec OrderNotification) query;
   getProduct: (id: nat) -> (opt Product) query;
+  getProductReviews: (productId: nat) -> (vec Review) query;
   getProducts: () -> (vec Product) query;
   getProductsByCategory: (category: Category) -> (vec Product) query;
+  getRatingDistribution: (productId: nat) -> (RatingDistribution) query;
   getSavedAddresses: () -> (vec UserAddress) query;
   getSearchSuggestions: (q: text) -> (vec Product) query;
   getUserOrders: () -> (vec Order) query;
   removeFromCart: (cartItemId: nat) -> (bool);
+  returnOrder: (orderId: nat) -> (opt Order);
   searchProducts: (params: SearchParams) -> (SearchResult) query;
+  toggleHelpfulVote: (reviewId: nat, isHelpful: bool) -> ();
   updateCartQuantity: (cartItemId: nat, quantity: nat) -> (bool);
+  updateOrderStatus: (orderId: nat, newStatus: OrderStatus) -> (opt Order);
 }

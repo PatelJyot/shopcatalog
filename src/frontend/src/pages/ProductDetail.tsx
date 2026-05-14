@@ -1,24 +1,38 @@
+import { createActor } from "@/backend";
 import ProductCard from "@/components/ProductCard";
+import RatingBreakdown from "@/components/RatingBreakdown";
+import ReviewCard from "@/components/ReviewCard";
 import StarRating from "@/components/StarRating";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/hooks/useCart";
 import { useProduct, useProductsByCategory } from "@/hooks/useProducts";
+import {
+  useCreateReview,
+  useProductReviews,
+  useRatingDistribution,
+} from "@/hooks/useReviews";
+import type { CreateReviewRequest } from "@/types/review";
+import { useActor, useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
   AlertCircle,
   ChevronRight,
+  Loader2,
   Minus,
   Package,
+  PenLine,
   Plus,
   RotateCcw,
   Shield,
   ShoppingCart,
+  Star,
   Truck,
+  X,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 function formatPrice(price: number) {
@@ -86,12 +100,98 @@ function ProductDetailSkeleton() {
 const THUMB_KEYS = ["thumb-0", "thumb-1", "thumb-2", "thumb-3"];
 const RELATED_KEYS = ["rel-0", "rel-1", "rel-2", "rel-3"];
 
+const SORT_OPTIONS = [
+  { value: "recent", label: "Most Recent" },
+  { value: "helpful", label: "Most Helpful" },
+];
+
+type SortOption = "recent" | "helpful";
+
+interface StarPickerProps {
+  value: number;
+  onChange: (v: number) => void;
+}
+
+function StarPicker({ value, onChange }: StarPickerProps) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <fieldset className="flex gap-1 border-0 p-0 m-0">
+      <legend className="sr-only">Select star rating</legend>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <button
+          key={`pick-${s}`}
+          type="button"
+          aria-label={`${s} star${s !== 1 ? "s" : ""}`}
+          aria-pressed={value === s}
+          onMouseEnter={() => setHovered(s)}
+          onMouseLeave={() => setHovered(0)}
+          onClick={() => onChange(s)}
+          className="cursor-pointer p-0.5 transition-transform hover:scale-110"
+        >
+          <Star
+            className={`w-7 h-7 transition-colors duration-100 ${
+              (hovered || value) >= s
+                ? "fill-accent text-accent"
+                : "fill-muted text-muted-foreground"
+            }`}
+          />
+        </button>
+      ))}
+    </fieldset>
+  );
+}
+
+function useUserOrders(
+  productId: string,
+  actor: {
+    getUserOrders: () => Promise<
+      Array<{ items: Array<{ productId: bigint }> }>
+    >;
+  } | null,
+) {
+  const [hasOrdered, setHasOrdered] = useState<boolean>(false);
+  useEffect(() => {
+    if (!actor) return;
+    actor
+      .getUserOrders()
+      .then((orders) => {
+        const found = orders.some((o) =>
+          o.items.some((item) => String(item.productId) === productId),
+        );
+        setHasOrdered(found);
+      })
+      .catch(() => {});
+  }, [actor, productId]);
+  return hasOrdered;
+}
+
 export default function ProductDetail() {
   const { id } = useParams({ from: "/product/$id" });
   const navigate = useNavigate();
   const { data: product, isLoading, isError } = useProduct(id);
   const { data: related } = useProductsByCategory(product?.category ?? "");
   const { addToCart } = useCart();
+  const { identity, isAuthenticated } = useInternetIdentity();
+  const currentUserId = identity
+    ? identity.getPrincipal().toString()
+    : undefined;
+
+  // Review state
+  const { data: reviews, isLoading: reviewsLoading } = useProductReviews(id);
+  const { data: distribution, isLoading: distLoading } =
+    useRatingDistribution(id);
+  const { mutate: createReview, isPending: submitting } = useCreateReview();
+  const { actor } = useActor(createActor);
+  const hasOrdered = useUserOrders(id, actor ?? null);
+
+  const [activeStar, setActiveStar] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewBody, setReviewBody] = useState("");
+  const [reviewError, setReviewError] = useState("");
+  const reviewsRef = useRef<HTMLDivElement>(null);
 
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -101,7 +201,56 @@ export default function ProductDetail() {
   useEffect(() => {
     setActiveImage(0);
     setQuantity(1);
+    setActiveStar(null);
+    setShowReviewForm(false);
   }, [id]);
+
+  // Derived reviews
+  const filteredReviews = (reviews ?? [])
+    .filter((r) => (activeStar === null ? true : r.rating === activeStar))
+    .sort((a, b) => {
+      if (sortBy === "helpful") return b.helpfulCount - a.helpfulCount;
+      return Number(b.createdAt) - Number(a.createdAt);
+    });
+
+  const totalReviews = reviews?.length ?? 0;
+  const avgRating =
+    totalReviews > 0
+      ? (reviews ?? []).reduce((s, r) => s + r.rating, 0) / totalReviews
+      : 0;
+
+  function handleSubmitReview(e: React.FormEvent) {
+    e.preventDefault();
+    if (reviewRating === 0) {
+      setReviewError("Please select a star rating");
+      return;
+    }
+    if (!reviewTitle.trim()) {
+      setReviewError("Please add a title");
+      return;
+    }
+    if (!reviewBody.trim()) {
+      setReviewError("Please write your review");
+      return;
+    }
+    setReviewError("");
+    const req: CreateReviewRequest = {
+      productId: id,
+      rating: reviewRating,
+      title: reviewTitle.trim(),
+      body: reviewBody.trim(),
+      images: [],
+    };
+    createReview(req, {
+      onSuccess: () => {
+        setShowReviewForm(false);
+        setReviewRating(5);
+        setReviewTitle("");
+        setReviewBody("");
+      },
+      onError: () => setReviewError("Failed to submit. Please try again."),
+    });
+  }
 
   if (isLoading) return <ProductDetailSkeleton />;
 
@@ -450,6 +599,228 @@ export default function ProductDetail() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div
+          className="mt-12 border-t border-border pt-8"
+          ref={reviewsRef}
+          data-ocid="reviews.section"
+        >
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+            <h2 className="font-display text-2xl font-bold text-foreground">
+              Customer Reviews
+            </h2>
+            {isAuthenticated && hasOrdered && (
+              <Button
+                type="button"
+                onClick={() => setShowReviewForm((v) => !v)}
+                data-ocid="reviews.write_review_button"
+                className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 font-semibold"
+              >
+                <PenLine className="w-4 h-4" />
+                {showReviewForm ? "Cancel" : "Write a Review"}
+              </Button>
+            )}
+          </div>
+
+          {/* Rating breakdown */}
+          <div className="bg-card border border-border rounded-xl p-6 mb-6">
+            <RatingBreakdown
+              distribution={distribution}
+              isLoading={distLoading}
+              average={avgRating}
+              totalReviews={totalReviews}
+              activeStar={activeStar}
+              onFilterByStar={setActiveStar}
+            />
+          </div>
+
+          {/* Review submission form */}
+          {showReviewForm && (
+            <div
+              className="bg-card border border-border rounded-xl p-6 mb-6"
+              data-ocid="reviews.form"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-lg font-bold text-foreground">
+                  Write Your Review
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowReviewForm(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+                  aria-label="Close review form"
+                  data-ocid="reviews.form_close_button"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmitReview} className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">
+                    Your Rating *
+                  </p>
+                  <StarPicker value={reviewRating} onChange={setReviewRating} />
+                </div>
+                <div>
+                  <label
+                    htmlFor="review-title"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Review Title *
+                  </label>
+                  <input
+                    id="review-title"
+                    type="text"
+                    value={reviewTitle}
+                    onChange={(e) => setReviewTitle(e.target.value)}
+                    placeholder="Summarise your experience"
+                    maxLength={120}
+                    data-ocid="reviews.title_input"
+                    className="mt-1.5 w-full h-10 px-3 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="review-body"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Your Review *
+                  </label>
+                  <textarea
+                    id="review-body"
+                    value={reviewBody}
+                    onChange={(e) => setReviewBody(e.target.value)}
+                    placeholder="Share details about your experience"
+                    rows={4}
+                    maxLength={2000}
+                    data-ocid="reviews.body_textarea"
+                    className="mt-1.5 w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                  />
+                </div>
+                {reviewError && (
+                  <p
+                    className="text-sm text-destructive font-medium"
+                    data-ocid="reviews.form_error_state"
+                  >
+                    {reviewError}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  data-ocid="reviews.submit_button"
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold gap-2"
+                >
+                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {submitting ? "Submitting…" : "Submit Review"}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* Filter + sort bar */}
+          {totalReviews > 0 && (
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setActiveStar(null)}
+                  data-ocid="reviews.filter.all"
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors duration-150 ${
+                    activeStar === null
+                      ? "bg-accent text-accent-foreground border-accent"
+                      : "border-border text-muted-foreground hover:border-accent/50"
+                  }`}
+                >
+                  All
+                </button>
+                {[5, 4, 3, 2, 1].map((s) => (
+                  <button
+                    key={`filter-tab-${s}`}
+                    type="button"
+                    onClick={() => setActiveStar(activeStar === s ? null : s)}
+                    data-ocid={`reviews.filter.${s}star`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors duration-150 ${
+                      activeStar === s
+                        ? "bg-accent text-accent-foreground border-accent"
+                        : "border-border text-muted-foreground hover:border-accent/50"
+                    }`}
+                  >
+                    {s}★
+                  </button>
+                ))}
+              </div>
+              <div className="ml-auto">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  data-ocid="reviews.sort_select"
+                  aria-label="Sort reviews"
+                  className="h-8 pl-3 pr-7 text-xs rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Review list */}
+          {reviewsLoading ? (
+            <div className="space-y-4" data-ocid="reviews.loading_state">
+              {[1, 2, 3].map((k) => (
+                <div
+                  key={`review-skel-${k}`}
+                  className="bg-card border border-border rounded-xl p-5 space-y-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+                    <div className="space-y-1 flex-1">
+                      <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+                      <div className="h-2.5 w-16 bg-muted rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="h-4 w-40 bg-muted rounded animate-pulse" />
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-full bg-muted rounded animate-pulse" />
+                    <div className="h-3 w-4/5 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredReviews.length === 0 ? (
+            <div
+              className="text-center py-16 bg-card border border-border rounded-xl"
+              data-ocid="reviews.empty_state"
+            >
+              <Star className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-foreground font-semibold text-lg mb-1">
+                {activeStar
+                  ? `No ${activeStar}★ reviews yet`
+                  : "No reviews yet"}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                {isAuthenticated && hasOrdered
+                  ? "Be the first to review this product!"
+                  : "Purchase this product to leave a review."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4" data-ocid="reviews.list">
+              {filteredReviews.map((review, idx) => (
+                <ReviewCard
+                  key={`review-${review.id}-${idx}`}
+                  review={review}
+                  currentUserId={currentUserId}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Related Products */}

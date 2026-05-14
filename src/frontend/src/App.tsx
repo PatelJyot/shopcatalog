@@ -17,6 +17,10 @@ const SearchPage = lazy(() => import("@/pages/Search"));
 const CategoryPage = lazy(() => import("@/pages/Category"));
 const CheckoutPage = lazy(() => import("@/pages/Checkout"));
 const OrderSuccessPage = lazy(() => import("@/pages/OrderSuccess"));
+const WriteReviewPage = lazy(() => import("@/pages/WriteReview"));
+const MyOrdersPage = lazy(() => import("@/pages/MyOrders"));
+const OrderDetailPage = lazy(() => import("@/pages/OrderDetail"));
+const AdminOrdersPage = lazy(() => import("@/pages/AdminOrders"));
 
 function PageLoader() {
   return (
@@ -114,6 +118,46 @@ const orderSuccessRoute = createRoute({
   ),
 });
 
+const writeReviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/product/$id/review",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <WriteReviewPage />
+    </Suspense>
+  ),
+});
+
+const myOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/orders",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <MyOrdersPage />
+    </Suspense>
+  ),
+});
+
+const orderDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/order/$id",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <OrderDetailPage />
+    </Suspense>
+  ),
+});
+
+const adminOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/orders",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <AdminOrdersPage />
+    </Suspense>
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   productsRoute,
@@ -123,6 +167,10 @@ const routeTree = rootRoute.addChildren([
   categoryRoute,
   checkoutRoute,
   orderSuccessRoute,
+  writeReviewRoute,
+  myOrdersRoute,
+  orderDetailRoute,
+  adminOrdersRoute,
 ]);
 
 const router = createRouter({ routeTree });

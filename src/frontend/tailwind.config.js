@@ -56,6 +56,14 @@ export default {
           4: "oklch(var(--chart-4))",
           5: "oklch(var(--chart-5))",
         },
+        success: {
+          DEFAULT: "oklch(var(--success) / <alpha-value>)",
+          foreground: "oklch(var(--foreground))",
+        },
+        warning: {
+          DEFAULT: "oklch(var(--warning) / <alpha-value>)",
+          foreground: "oklch(var(--foreground))",
+        },
         sidebar: {
           DEFAULT: "oklch(var(--sidebar))",
           foreground: "oklch(var(--sidebar-foreground))",

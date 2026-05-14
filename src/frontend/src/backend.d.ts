@@ -7,6 +7,25 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface Review {
+    id: bigint;
+    title: string;
+    body: string;
+    userId: Principal;
+    createdAt: Time;
+    productId: bigint;
+    rating: bigint;
+    helpfulVotes: Array<HelpfulVote>;
+    helpfulCount: bigint;
+    verifiedPurchase: boolean;
+    images: Array<string>;
+}
+export interface SearchResult {
+    total: bigint;
+    page: bigint;
+    pageSize: bigint;
+    products: Array<Product>;
+}
 export interface CreateAddressRequest {
     city: string;
     name: string;
@@ -17,13 +36,11 @@ export interface CreateAddressRequest {
     pinCode: string;
     phone: string;
 }
-export interface SearchResult {
-    total: bigint;
-    page: bigint;
-    pageSize: bigint;
-    products: Array<Product>;
-}
 export type Time = bigint;
+export interface PaginatedOrders {
+    total: bigint;
+    orders: Array<Order>;
+}
 export type PaymentMethod = {
     __kind__: "COD";
     COD: null;
@@ -55,17 +72,27 @@ export interface SearchParams {
 }
 export interface Order {
     id: bigint;
+    trackingNumber?: string;
     deliveryCharge: number;
     paymentStatus: PaymentStatus;
     paymentMethod: PaymentMethod;
     orderStatus: OrderStatus;
     userId: Principal;
     createdAt: Time;
+    estimatedDeliveryDate?: Time;
+    updatedAt: Time;
     shippingAddress: AddressSnapshot;
     items: Array<OrderItem>;
     taxAmount: number;
     totalPrice: number;
     subtotal: number;
+}
+export interface CreateReviewRequest {
+    title: string;
+    body: string;
+    productId: bigint;
+    rating: bigint;
+    images: Array<string>;
 }
 export interface UserAddress {
     id: bigint;
@@ -80,6 +107,10 @@ export interface UserAddress {
     pinCode: string;
     phone: string;
 }
+export interface HelpfulVote {
+    userId: Principal;
+    isHelpful: boolean;
+}
 export interface CartItemView {
     id: bigint;
     title: string;
@@ -90,6 +121,13 @@ export interface CartItemView {
     salePrice?: number;
     image: string;
     price: number;
+}
+export interface RatingDistribution {
+    star1: bigint;
+    star2: bigint;
+    star3: bigint;
+    star4: bigint;
+    star5: bigint;
 }
 export interface CreateOrderRequest {
     paymentMethod: PaymentMethod;
@@ -128,6 +166,14 @@ export interface Product {
     reviewCount: bigint;
     images: Array<string>;
 }
+export interface OrderNotification {
+    oldStatus: OrderStatus;
+    userId: Principal;
+    orderId: bigint;
+    message: string;
+    timestamp: Time;
+    newStatus: OrderStatus;
+}
 export enum Category {
     Home = "Home",
     Grocery = "Grocery",
@@ -136,11 +182,14 @@ export enum Category {
     Electronics = "Electronics"
 }
 export enum OrderStatus {
-    Delivered = "Delivered",
-    Confirmed = "Confirmed",
-    Cancelled = "Cancelled",
-    Shipped = "Shipped",
-    Pending = "Pending"
+    shipped = "shipped",
+    cancelled = "cancelled",
+    outForDelivery = "outForDelivery",
+    placed = "placed",
+    delivered = "delivered",
+    confirmed = "confirmed",
+    packed = "packed",
+    returned = "returned"
 }
 export enum PaymentStatus {
     Failed = "Failed",
@@ -149,21 +198,30 @@ export enum PaymentStatus {
 }
 export interface backendInterface {
     addToCart(productId: bigint, quantity: bigint): Promise<CartItem>;
+    cancelOrder(orderId: bigint): Promise<Order | null>;
     clearCart(): Promise<void>;
     createAddress(req: CreateAddressRequest): Promise<UserAddress>;
     createOrder(req: CreateOrderRequest): Promise<Order>;
+    createReview(req: CreateReviewRequest): Promise<Review>;
+    getAllOrders(offset: bigint, limit: bigint): Promise<PaginatedOrders>;
     getBrands(): Promise<Array<string>>;
     getCart(): Promise<Array<CartItemView>>;
     getDeals(): Promise<Array<Product>>;
     getFeaturedProducts(): Promise<Array<Product>>;
     getOrder(orderId: bigint): Promise<Order | null>;
+    getOrderNotifications(): Promise<Array<OrderNotification>>;
     getProduct(id: bigint): Promise<Product | null>;
+    getProductReviews(productId: bigint): Promise<Array<Review>>;
     getProducts(): Promise<Array<Product>>;
     getProductsByCategory(category: Category): Promise<Array<Product>>;
+    getRatingDistribution(productId: bigint): Promise<RatingDistribution>;
     getSavedAddresses(): Promise<Array<UserAddress>>;
     getSearchSuggestions(q: string): Promise<Array<Product>>;
     getUserOrders(): Promise<Array<Order>>;
     removeFromCart(cartItemId: bigint): Promise<boolean>;
+    returnOrder(orderId: bigint): Promise<Order | null>;
     searchProducts(params: SearchParams): Promise<SearchResult>;
+    toggleHelpfulVote(reviewId: bigint, isHelpful: boolean): Promise<void>;
     updateCartQuantity(cartItemId: bigint, quantity: bigint): Promise<boolean>;
+    updateOrderStatus(orderId: bigint, newStatus: OrderStatus): Promise<Order | null>;
 }

@@ -1,63 +1,63 @@
-# Amazon-Style E-Commerce Product Catalog
+# Amazon-Style E-Commerce: Order Management System
 
 ## Direction
-Clean, minimalist e-commerce interface with white background and orange accent. Amazon-inspired efficiency focused on product discovery and purchasing. No decoration—every visual element serves information hierarchy or functionality.
+Extended design system for order management and tracking. Maintains clean, minimalist e-commerce interface with white background, orange accent, and introduces color-coded status semantics (green=delivered/active, orange=processing, grey=pending, red=cancelled). Order detail pages emphasize visual status timeline and delivery information. Admin panel uses utilitarian table design with minimal borders and compact spacing.
 
-## Palette
+## Palette — Order Status Semantics
 | Token | OKLCH | Purpose |
 |-------|-------|----------|
-| Primary | 0.2 0 0 | Text, navigation, structure |
-| Accent (Orange) | 0.714 0.24 61.59 | CTA buttons, highlights, links |
-| Background | 0.99 0 0 | Page background, clean canvas |
-| Card | 1.0 0 0 | Product cards, modals |
-| Muted | 0.92 0 0 | Borders, dividers, subtle UI |
-| Destructive | 0.55 0.22 25 | Stock warnings, sale badges |
+| Success | 0.66 0.19 142 | Delivered, completed states (green) |
+| Warning | 0.78 0.18 61.59 | Out for delivery, urgent states (orange-warm) |
+| Status Delivered | 0.66 0.19 142 | Order arrived |
+| Status Out-for-Delivery | 0.78 0.18 61.59 | In transit |
+| Status Shipped/Packed/Confirmed | 0.714 0.24 61.59 | Processing (orange accent) |
+| Status Placed | 0.5 0 0 | Pending initial confirmation (dark grey) |
+| Status Cancelled/Returned | 0.55 0.22 25 | Terminal states (red destructive) |
 
-## Typography
+## Typography — Order Management
 | Layer | Font | Use |
 |-------|------|-----|
-| Display | Fraunces | Hero section, page titles |
-| Body | GeneralSans | Navigation, product titles, description, UI text |
-| Mono | JetBrainsMono | Product SKU, technical product info |
+| Display | Fraunces | Section headers (My Orders, Order Details, Admin Panel) |
+| Body | GeneralSans | Order list items, address, payment info, timeline labels |
+| Mono | JetBrainsMono | Order ID, tracking number, price/amount |
 
-## Elevation & Depth
-- **Header**: White bg, border-bottom (0.88 L grey)
-- **Cards**: White bg, subtle shadow-sm on rest, shadow-md on hover
-- **Footer**: Muted bg (0.92 L), border-top
-- **Hover states**: Lift 4px, shadow deepens
+## Component Patterns — Order UI
+| Component | Design |
+|-----------|--------|
+| Status Badge | 8px padding, 4px radius, semantic color bg/text, 12px font |
+| Timeline Step | Dot (10px, 2px border) + connecting line (2px, 8px height) |
+| Timeline Dot Completed | Accent orange, solid |
+| Timeline Dot Current | Success green, 2px ring (success/30 opacity) |
+| Timeline Dot Pending | Border grey, unfilled |
+| Order Card | White bg, subtle shadow, 1.5rem padding, 1rem gaps |
+| Admin Table | White bg, border-bottom on rows, 0.5rem row padding, compact |
 
-## Structural Zones
+## Structural Zones — Order Pages
 | Zone | Background | Treatment |
 |------|------------|----------|
-| Header | white | Border-bottom, navigation |
-| Hero | white | Full-width with product image |
-| Featured Grid | white | 4-column responsive, card-based |
-| Footer | muted-50 | Border-top, light |
+| Order List Header | white | Filter tabs (All, Active, Completed, Cancelled), search input |
+| Order Cards | white | Card-based grid (1 col mobile, 2 col tablet, responsive), gap 1.5rem |
+| Order Detail Header | white | Order ID, status badge, date |
+| Order Summary | card (1.0 L) | Items list with images, quantities, prices, subtotal/tax/total |
+| Status Timeline | white | Horizontal timeline (mobile: vertical stacked), 8px between steps |
+| Delivery Address | card (1.0 L) | Bordered section, address block |
+| Admin Table | white | Sticky header, zebra rows optional, search bar above |
+| Admin Bulk Actions | muted (0.92 L) | Floating toolbar with status dropdown, apply button |
 
-## Spacing & Rhythm
-- Gutters: 1rem (mobile), 1.5rem (tablet), 2rem (desktop)
-- Card padding: 1rem
-- Gap between products: 1.5rem
-- Typography scale: 12px, 14px, 16px, 18px, 24px, 32px
+## Motion & Interaction
+- Status badge hover: slight scale, shadow lift
+- Timeline dot on current step: ring glow animation (pulse subtle)
+- Card hover: shadow-md, -4px translate Y
+- Button transitions: bg and shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)
+- Status update dropdown: instant change on select, toast notification (in-app, no email)
 
-## Component Patterns
-- **Product Card**: Image, title, price, rating (stars), add-to-cart button
-- **CTA Buttons**: Orange background, white text, 4px border-radius, hover shadow
-- **Price Display**: Black primary text, strikethrough on sale price
-- **Rating**: Star icon + count (right-aligned)
-- **Grid**: 1 col (mobile), 2 col (tablet sm), 3 col (tablet lg), 4 col (desktop)
+## Constraints — Order Management
+- No dark mode override (inherit from root; light-optimized)
+- Status badges use semantic color tokens (success, warning, destructive)
+- Timeline uses only circle dots and connecting lines (no icons)
+- Order ID displayed in monospace for scannability
+- Admin panel: functional, minimal decoration, high information density
+- Buttons: Orange for primary CTAs (View Details, Track Order, Update Status), grey for secondary (Cancel, Return)
 
-## Motion
-- Smooth transitions (0.3s cubic-bezier(0.4, 0, 0.2, 1)) on hover
-- Button: bg and shadow change
-- Card: opacity fade-in on load
-
-## Constraints
-- No dark mode (light-only aesthetic)
-- No gradients, no blur effects
-- Orange used only on CTA and active states
-- Max content width: 1400px
-- No animations beyond hover/focus transitions
-
-## Signature Detail
-Orange accent color appears only on interactive elements (buttons, links, active navigation). Product cards rely on typography hierarchy and subtle shadow for depth—the accent pops through CTAs only, drawing attention to purchase actions without visual noise.
+## Signature Detail — Order Status Timeline
+Horizontal linear timeline (mobile: stacked vertical) showing order journey. Current step highlighted in green with subtle ring glow. Completed steps in orange accent. Pending steps in light grey. No decoration—pure informational clarity. Matches Amazon's visual pattern for order transparency.

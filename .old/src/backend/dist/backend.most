@@ -1,4 +1,4 @@
-// Version: 1.0.0
+// Version: 3.0.0
 type AddressSnapshot__825702118 =
   {
     addressLine1 : Text;
@@ -19,10 +19,55 @@ type CartItem__1044444615 =
     userId : Principal
   };
 type Category__8224233 = {#Books; #Electronics; #Fashion; #Grocery; #Home};
+type HelpfulVote__19888764 = {isHelpful : Bool; userId : Principal};
 type Int__270357528 = Int__616954475;
 type Int__616954475 = Int;
+type List__415060402<T> = List__790383201<T>;
+type List__790383201<T> =
+  {
+    var blockIndex : Nat__490723111;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__490723111
+  };
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
+type OldAddressSnapshot__902013506 =
+  {
+    addressLine1 : Text;
+    addressLine2 : Text;
+    city : Text;
+    name : Text;
+    phone : Text;
+    pinCode : Text;
+    state : Text
+  };
+type OldOrderItem__518217749 =
+  {
+    image : Text;
+    price : Float;
+    productId : Nat;
+    quantity : Nat;
+    title : Text
+  };
+type OldOrderStatus__13175761 =
+  {#Cancelled; #Confirmed; #Delivered; #Pending; #Shipped};
+type OldOrder__235915581 =
+  {
+    createdAt : Time__900049286;
+    deliveryCharge : Float;
+    id : Nat;
+    items : [OldOrderItem__518217749];
+    orderStatus : OldOrderStatus__13175761;
+    paymentMethod : OldPaymentMethod__832006779;
+    paymentStatus : OldPaymentStatus__257022736;
+    shippingAddress : OldAddressSnapshot__902013506;
+    subtotal : Float;
+    taxAmount : Float;
+    totalPrice : Float;
+    userId : Principal
+  };
+type OldPaymentMethod__832006779 = {#COD; #Card : Text; #UPI : Text};
+type OldPaymentStatus__257022736 = {#Failed; #Paid; #Pending};
 type OrderItem__241319351 =
   {
     image : Text;
@@ -31,12 +76,31 @@ type OrderItem__241319351 =
     quantity : Nat;
     title : Text
   };
+type OrderNotification__999572845 =
+  {
+    message : Text;
+    newStatus : OrderStatus__272730104;
+    oldStatus : OrderStatus__272730104;
+    orderId : Nat;
+    timestamp : Time__900049286;
+    userId : Principal
+  };
 type OrderStatus__272730104 =
-  {#Cancelled; #Confirmed; #Delivered; #Pending; #Shipped};
+  {
+    #cancelled;
+    #confirmed;
+    #delivered;
+    #outForDelivery;
+    #packed;
+    #placed;
+    #returned;
+    #shipped
+  };
 type Order__141779993 =
   {
     createdAt : Time__900049286;
     deliveryCharge : Float;
+    estimatedDeliveryDate : ?Time__900049286;
     id : Nat;
     items : [OrderItem__241319351];
     orderStatus : OrderStatus__272730104;
@@ -46,6 +110,8 @@ type Order__141779993 =
     subtotal : Float;
     taxAmount : Float;
     totalPrice : Float;
+    trackingNumber : ?Text;
+    updatedAt : Time__900049286;
     userId : Principal
   };
 type PaymentMethod__972042942 = {#COD; #Card : Text; #UPI : Text};
@@ -67,6 +133,20 @@ type Product__750902660 =
     stockQuantity : Nat;
     title : Text
   };
+type Review__513345496 =
+  {
+    body : Text;
+    createdAt : Time__900049286;
+    helpfulCount : Nat;
+    helpfulVotes : [HelpfulVote__19888764];
+    id : Nat;
+    images : [Text];
+    productId : Nat;
+    rating : Nat;
+    title : Text;
+    userId : Principal;
+    verifiedPurchase : Bool
+  };
 type Time__796480547 = Int__270357528;
 type Time__900049286 = Time__796480547;
 type UserAddress__496159920 =
@@ -83,7 +163,7 @@ type UserAddress__496159920 =
     state : Text;
     userId : Principal
   };
-actor {
+actor ({
   stable addresses :
     {
       var blockIndex : Nat__490723111;
@@ -99,6 +179,49 @@ actor {
   stable var nextAddressId : Nat;
   stable var nextCartId : Nat;
   stable var nextOrderId : Nat;
+  stable nextReviewId : {var value : Nat};
+  stable orderNotifications :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?OrderNotification__999572845]];
+      var elementIndex : Nat__490723111
+    };
+  in orders : List__415060402<OldOrder__235915581>;
+  stable products :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Product__750902660]];
+      var elementIndex : Nat__490723111
+    };
+  stable reviews :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Review__513345496]];
+      var elementIndex : Nat__490723111
+    }
+}, {
+  stable addresses :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?UserAddress__496159920]];
+      var elementIndex : Nat__490723111
+    };
+  stable cartItems :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?CartItem__1044444615]];
+      var elementIndex : Nat__490723111
+    };
+  stable var nextAddressId : Nat;
+  stable var nextCartId : Nat;
+  stable var nextOrderId : Nat;
+  stable nextReviewId : {var value : Nat};
+  stable orderNotifications :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?OrderNotification__999572845]];
+      var elementIndex : Nat__490723111
+    };
   stable orders :
     {
       var blockIndex : Nat__490723111;
@@ -110,5 +233,11 @@ actor {
       var blockIndex : Nat__490723111;
       var blocks : [var [var ?Product__750902660]];
       var elementIndex : Nat__490723111
+    };
+  stable reviews :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Review__513345496]];
+      var elementIndex : Nat__490723111
     }
-};
+});

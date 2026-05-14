@@ -57,14 +57,25 @@ export interface CreateOrderRequest {
   'paymentMethod' : PaymentMethod,
   'shippingAddress' : AddressSnapshot,
 }
+export interface CreateReviewRequest {
+  'title' : string,
+  'body' : string,
+  'productId' : bigint,
+  'rating' : bigint,
+  'images' : Array<string>,
+}
+export interface HelpfulVote { 'userId' : Principal, 'isHelpful' : boolean }
 export interface Order {
   'id' : bigint,
+  'trackingNumber' : [] | [string],
   'deliveryCharge' : number,
   'paymentStatus' : PaymentStatus,
   'paymentMethod' : PaymentMethod,
   'orderStatus' : OrderStatus,
   'userId' : Principal,
   'createdAt' : Time,
+  'estimatedDeliveryDate' : [] | [Time],
+  'updatedAt' : Time,
   'shippingAddress' : AddressSnapshot,
   'items' : Array<OrderItem>,
   'taxAmount' : number,
@@ -78,11 +89,23 @@ export interface OrderItem {
   'image' : string,
   'price' : number,
 }
-export type OrderStatus = { 'Delivered' : null } |
-  { 'Confirmed' : null } |
-  { 'Cancelled' : null } |
-  { 'Shipped' : null } |
-  { 'Pending' : null };
+export interface OrderNotification {
+  'oldStatus' : OrderStatus,
+  'userId' : Principal,
+  'orderId' : bigint,
+  'message' : string,
+  'timestamp' : Time,
+  'newStatus' : OrderStatus,
+}
+export type OrderStatus = { 'shipped' : null } |
+  { 'cancelled' : null } |
+  { 'outForDelivery' : null } |
+  { 'placed' : null } |
+  { 'delivered' : null } |
+  { 'confirmed' : null } |
+  { 'packed' : null } |
+  { 'returned' : null };
+export interface PaginatedOrders { 'total' : bigint, 'orders' : Array<Order> }
 export type PaymentMethod = { 'COD' : null } |
   { 'UPI' : string } |
   { 'Card' : string };
@@ -103,6 +126,26 @@ export interface Product {
   'rating' : number,
   'price' : number,
   'reviewCount' : bigint,
+  'images' : Array<string>,
+}
+export interface RatingDistribution {
+  'star1' : bigint,
+  'star2' : bigint,
+  'star3' : bigint,
+  'star4' : bigint,
+  'star5' : bigint,
+}
+export interface Review {
+  'id' : bigint,
+  'title' : string,
+  'body' : string,
+  'userId' : Principal,
+  'createdAt' : Time,
+  'productId' : bigint,
+  'rating' : bigint,
+  'helpfulVotes' : Array<HelpfulVote>,
+  'helpfulCount' : bigint,
+  'verifiedPurchase' : boolean,
   'images' : Array<string>,
 }
 export interface SearchParams {
@@ -139,23 +182,32 @@ export interface UserAddress {
 }
 export interface _SERVICE {
   'addToCart' : ActorMethod<[bigint, bigint], CartItem>,
+  'cancelOrder' : ActorMethod<[bigint], [] | [Order]>,
   'clearCart' : ActorMethod<[], undefined>,
   'createAddress' : ActorMethod<[CreateAddressRequest], UserAddress>,
   'createOrder' : ActorMethod<[CreateOrderRequest], Order>,
+  'createReview' : ActorMethod<[CreateReviewRequest], Review>,
+  'getAllOrders' : ActorMethod<[bigint, bigint], PaginatedOrders>,
   'getBrands' : ActorMethod<[], Array<string>>,
   'getCart' : ActorMethod<[], Array<CartItemView>>,
   'getDeals' : ActorMethod<[], Array<Product>>,
   'getFeaturedProducts' : ActorMethod<[], Array<Product>>,
   'getOrder' : ActorMethod<[bigint], [] | [Order]>,
+  'getOrderNotifications' : ActorMethod<[], Array<OrderNotification>>,
   'getProduct' : ActorMethod<[bigint], [] | [Product]>,
+  'getProductReviews' : ActorMethod<[bigint], Array<Review>>,
   'getProducts' : ActorMethod<[], Array<Product>>,
   'getProductsByCategory' : ActorMethod<[Category], Array<Product>>,
+  'getRatingDistribution' : ActorMethod<[bigint], RatingDistribution>,
   'getSavedAddresses' : ActorMethod<[], Array<UserAddress>>,
   'getSearchSuggestions' : ActorMethod<[string], Array<Product>>,
   'getUserOrders' : ActorMethod<[], Array<Order>>,
   'removeFromCart' : ActorMethod<[bigint], boolean>,
+  'returnOrder' : ActorMethod<[bigint], [] | [Order]>,
   'searchProducts' : ActorMethod<[SearchParams], SearchResult>,
+  'toggleHelpfulVote' : ActorMethod<[bigint, boolean], undefined>,
   'updateCartQuantity' : ActorMethod<[bigint, bigint], boolean>,
+  'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], [] | [Order]>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

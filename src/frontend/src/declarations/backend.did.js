@@ -17,6 +17,59 @@ export const CartItem = IDL.Record({
   'addedAt' : Time,
   'quantity' : IDL.Nat,
 });
+export const PaymentStatus = IDL.Variant({
+  'Failed' : IDL.Null,
+  'Paid' : IDL.Null,
+  'Pending' : IDL.Null,
+});
+export const PaymentMethod = IDL.Variant({
+  'COD' : IDL.Null,
+  'UPI' : IDL.Text,
+  'Card' : IDL.Text,
+});
+export const OrderStatus = IDL.Variant({
+  'shipped' : IDL.Null,
+  'cancelled' : IDL.Null,
+  'outForDelivery' : IDL.Null,
+  'placed' : IDL.Null,
+  'delivered' : IDL.Null,
+  'confirmed' : IDL.Null,
+  'packed' : IDL.Null,
+  'returned' : IDL.Null,
+});
+export const AddressSnapshot = IDL.Record({
+  'city' : IDL.Text,
+  'name' : IDL.Text,
+  'state' : IDL.Text,
+  'addressLine1' : IDL.Text,
+  'addressLine2' : IDL.Text,
+  'pinCode' : IDL.Text,
+  'phone' : IDL.Text,
+});
+export const OrderItem = IDL.Record({
+  'title' : IDL.Text,
+  'productId' : IDL.Nat,
+  'quantity' : IDL.Nat,
+  'image' : IDL.Text,
+  'price' : IDL.Float64,
+});
+export const Order = IDL.Record({
+  'id' : IDL.Nat,
+  'trackingNumber' : IDL.Opt(IDL.Text),
+  'deliveryCharge' : IDL.Float64,
+  'paymentStatus' : PaymentStatus,
+  'paymentMethod' : PaymentMethod,
+  'orderStatus' : OrderStatus,
+  'userId' : IDL.Principal,
+  'createdAt' : Time,
+  'estimatedDeliveryDate' : IDL.Opt(Time),
+  'updatedAt' : Time,
+  'shippingAddress' : AddressSnapshot,
+  'items' : IDL.Vec(OrderItem),
+  'taxAmount' : IDL.Float64,
+  'totalPrice' : IDL.Float64,
+  'subtotal' : IDL.Float64,
+});
 export const CreateAddressRequest = IDL.Record({
   'city' : IDL.Text,
   'name' : IDL.Text,
@@ -40,56 +93,37 @@ export const UserAddress = IDL.Record({
   'pinCode' : IDL.Text,
   'phone' : IDL.Text,
 });
-export const PaymentMethod = IDL.Variant({
-  'COD' : IDL.Null,
-  'UPI' : IDL.Text,
-  'Card' : IDL.Text,
-});
-export const AddressSnapshot = IDL.Record({
-  'city' : IDL.Text,
-  'name' : IDL.Text,
-  'state' : IDL.Text,
-  'addressLine1' : IDL.Text,
-  'addressLine2' : IDL.Text,
-  'pinCode' : IDL.Text,
-  'phone' : IDL.Text,
-});
 export const CreateOrderRequest = IDL.Record({
   'paymentMethod' : PaymentMethod,
   'shippingAddress' : AddressSnapshot,
 });
-export const PaymentStatus = IDL.Variant({
-  'Failed' : IDL.Null,
-  'Paid' : IDL.Null,
-  'Pending' : IDL.Null,
-});
-export const OrderStatus = IDL.Variant({
-  'Delivered' : IDL.Null,
-  'Confirmed' : IDL.Null,
-  'Cancelled' : IDL.Null,
-  'Shipped' : IDL.Null,
-  'Pending' : IDL.Null,
-});
-export const OrderItem = IDL.Record({
+export const CreateReviewRequest = IDL.Record({
   'title' : IDL.Text,
+  'body' : IDL.Text,
   'productId' : IDL.Nat,
-  'quantity' : IDL.Nat,
-  'image' : IDL.Text,
-  'price' : IDL.Float64,
+  'rating' : IDL.Nat,
+  'images' : IDL.Vec(IDL.Text),
 });
-export const Order = IDL.Record({
+export const HelpfulVote = IDL.Record({
+  'userId' : IDL.Principal,
+  'isHelpful' : IDL.Bool,
+});
+export const Review = IDL.Record({
   'id' : IDL.Nat,
-  'deliveryCharge' : IDL.Float64,
-  'paymentStatus' : PaymentStatus,
-  'paymentMethod' : PaymentMethod,
-  'orderStatus' : OrderStatus,
+  'title' : IDL.Text,
+  'body' : IDL.Text,
   'userId' : IDL.Principal,
   'createdAt' : Time,
-  'shippingAddress' : AddressSnapshot,
-  'items' : IDL.Vec(OrderItem),
-  'taxAmount' : IDL.Float64,
-  'totalPrice' : IDL.Float64,
-  'subtotal' : IDL.Float64,
+  'productId' : IDL.Nat,
+  'rating' : IDL.Nat,
+  'helpfulVotes' : IDL.Vec(HelpfulVote),
+  'helpfulCount' : IDL.Nat,
+  'verifiedPurchase' : IDL.Bool,
+  'images' : IDL.Vec(IDL.Text),
+});
+export const PaginatedOrders = IDL.Record({
+  'total' : IDL.Nat,
+  'orders' : IDL.Vec(Order),
 });
 export const CartItemView = IDL.Record({
   'id' : IDL.Nat,
@@ -125,6 +159,21 @@ export const Product = IDL.Record({
   'reviewCount' : IDL.Nat,
   'images' : IDL.Vec(IDL.Text),
 });
+export const OrderNotification = IDL.Record({
+  'oldStatus' : OrderStatus,
+  'userId' : IDL.Principal,
+  'orderId' : IDL.Nat,
+  'message' : IDL.Text,
+  'timestamp' : Time,
+  'newStatus' : OrderStatus,
+});
+export const RatingDistribution = IDL.Record({
+  'star1' : IDL.Nat,
+  'star2' : IDL.Nat,
+  'star3' : IDL.Nat,
+  'star4' : IDL.Nat,
+  'star5' : IDL.Nat,
+});
 export const SearchParams = IDL.Record({
   'categories' : IDL.Vec(IDL.Text),
   'brands' : IDL.Vec(IDL.Text),
@@ -146,23 +195,40 @@ export const SearchResult = IDL.Record({
 
 export const idlService = IDL.Service({
   'addToCart' : IDL.Func([IDL.Nat, IDL.Nat], [CartItem], []),
+  'cancelOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], []),
   'clearCart' : IDL.Func([], [], []),
   'createAddress' : IDL.Func([CreateAddressRequest], [UserAddress], []),
   'createOrder' : IDL.Func([CreateOrderRequest], [Order], []),
+  'createReview' : IDL.Func([CreateReviewRequest], [Review], []),
+  'getAllOrders' : IDL.Func([IDL.Nat, IDL.Nat], [PaginatedOrders], ['query']),
   'getBrands' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
   'getCart' : IDL.Func([], [IDL.Vec(CartItemView)], ['query']),
   'getDeals' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getFeaturedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], ['query']),
+  'getOrderNotifications' : IDL.Func(
+      [],
+      [IDL.Vec(OrderNotification)],
+      ['query'],
+    ),
   'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
+  'getProductReviews' : IDL.Func([IDL.Nat], [IDL.Vec(Review)], ['query']),
   'getProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getProductsByCategory' : IDL.Func([Category], [IDL.Vec(Product)], ['query']),
+  'getRatingDistribution' : IDL.Func(
+      [IDL.Nat],
+      [RatingDistribution],
+      ['query'],
+    ),
   'getSavedAddresses' : IDL.Func([], [IDL.Vec(UserAddress)], ['query']),
   'getSearchSuggestions' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
   'getUserOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'removeFromCart' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'returnOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], []),
   'searchProducts' : IDL.Func([SearchParams], [SearchResult], ['query']),
+  'toggleHelpfulVote' : IDL.Func([IDL.Nat, IDL.Bool], [], []),
   'updateCartQuantity' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Bool], []),
+  'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [IDL.Opt(Order)], []),
 });
 
 export const idlInitArgs = [];
@@ -176,6 +242,59 @@ export const idlFactory = ({ IDL }) => {
     'updatedAt' : Time,
     'addedAt' : Time,
     'quantity' : IDL.Nat,
+  });
+  const PaymentStatus = IDL.Variant({
+    'Failed' : IDL.Null,
+    'Paid' : IDL.Null,
+    'Pending' : IDL.Null,
+  });
+  const PaymentMethod = IDL.Variant({
+    'COD' : IDL.Null,
+    'UPI' : IDL.Text,
+    'Card' : IDL.Text,
+  });
+  const OrderStatus = IDL.Variant({
+    'shipped' : IDL.Null,
+    'cancelled' : IDL.Null,
+    'outForDelivery' : IDL.Null,
+    'placed' : IDL.Null,
+    'delivered' : IDL.Null,
+    'confirmed' : IDL.Null,
+    'packed' : IDL.Null,
+    'returned' : IDL.Null,
+  });
+  const AddressSnapshot = IDL.Record({
+    'city' : IDL.Text,
+    'name' : IDL.Text,
+    'state' : IDL.Text,
+    'addressLine1' : IDL.Text,
+    'addressLine2' : IDL.Text,
+    'pinCode' : IDL.Text,
+    'phone' : IDL.Text,
+  });
+  const OrderItem = IDL.Record({
+    'title' : IDL.Text,
+    'productId' : IDL.Nat,
+    'quantity' : IDL.Nat,
+    'image' : IDL.Text,
+    'price' : IDL.Float64,
+  });
+  const Order = IDL.Record({
+    'id' : IDL.Nat,
+    'trackingNumber' : IDL.Opt(IDL.Text),
+    'deliveryCharge' : IDL.Float64,
+    'paymentStatus' : PaymentStatus,
+    'paymentMethod' : PaymentMethod,
+    'orderStatus' : OrderStatus,
+    'userId' : IDL.Principal,
+    'createdAt' : Time,
+    'estimatedDeliveryDate' : IDL.Opt(Time),
+    'updatedAt' : Time,
+    'shippingAddress' : AddressSnapshot,
+    'items' : IDL.Vec(OrderItem),
+    'taxAmount' : IDL.Float64,
+    'totalPrice' : IDL.Float64,
+    'subtotal' : IDL.Float64,
   });
   const CreateAddressRequest = IDL.Record({
     'city' : IDL.Text,
@@ -200,56 +319,37 @@ export const idlFactory = ({ IDL }) => {
     'pinCode' : IDL.Text,
     'phone' : IDL.Text,
   });
-  const PaymentMethod = IDL.Variant({
-    'COD' : IDL.Null,
-    'UPI' : IDL.Text,
-    'Card' : IDL.Text,
-  });
-  const AddressSnapshot = IDL.Record({
-    'city' : IDL.Text,
-    'name' : IDL.Text,
-    'state' : IDL.Text,
-    'addressLine1' : IDL.Text,
-    'addressLine2' : IDL.Text,
-    'pinCode' : IDL.Text,
-    'phone' : IDL.Text,
-  });
   const CreateOrderRequest = IDL.Record({
     'paymentMethod' : PaymentMethod,
     'shippingAddress' : AddressSnapshot,
   });
-  const PaymentStatus = IDL.Variant({
-    'Failed' : IDL.Null,
-    'Paid' : IDL.Null,
-    'Pending' : IDL.Null,
-  });
-  const OrderStatus = IDL.Variant({
-    'Delivered' : IDL.Null,
-    'Confirmed' : IDL.Null,
-    'Cancelled' : IDL.Null,
-    'Shipped' : IDL.Null,
-    'Pending' : IDL.Null,
-  });
-  const OrderItem = IDL.Record({
+  const CreateReviewRequest = IDL.Record({
     'title' : IDL.Text,
+    'body' : IDL.Text,
     'productId' : IDL.Nat,
-    'quantity' : IDL.Nat,
-    'image' : IDL.Text,
-    'price' : IDL.Float64,
+    'rating' : IDL.Nat,
+    'images' : IDL.Vec(IDL.Text),
   });
-  const Order = IDL.Record({
+  const HelpfulVote = IDL.Record({
+    'userId' : IDL.Principal,
+    'isHelpful' : IDL.Bool,
+  });
+  const Review = IDL.Record({
     'id' : IDL.Nat,
-    'deliveryCharge' : IDL.Float64,
-    'paymentStatus' : PaymentStatus,
-    'paymentMethod' : PaymentMethod,
-    'orderStatus' : OrderStatus,
+    'title' : IDL.Text,
+    'body' : IDL.Text,
     'userId' : IDL.Principal,
     'createdAt' : Time,
-    'shippingAddress' : AddressSnapshot,
-    'items' : IDL.Vec(OrderItem),
-    'taxAmount' : IDL.Float64,
-    'totalPrice' : IDL.Float64,
-    'subtotal' : IDL.Float64,
+    'productId' : IDL.Nat,
+    'rating' : IDL.Nat,
+    'helpfulVotes' : IDL.Vec(HelpfulVote),
+    'helpfulCount' : IDL.Nat,
+    'verifiedPurchase' : IDL.Bool,
+    'images' : IDL.Vec(IDL.Text),
+  });
+  const PaginatedOrders = IDL.Record({
+    'total' : IDL.Nat,
+    'orders' : IDL.Vec(Order),
   });
   const CartItemView = IDL.Record({
     'id' : IDL.Nat,
@@ -285,6 +385,21 @@ export const idlFactory = ({ IDL }) => {
     'reviewCount' : IDL.Nat,
     'images' : IDL.Vec(IDL.Text),
   });
+  const OrderNotification = IDL.Record({
+    'oldStatus' : OrderStatus,
+    'userId' : IDL.Principal,
+    'orderId' : IDL.Nat,
+    'message' : IDL.Text,
+    'timestamp' : Time,
+    'newStatus' : OrderStatus,
+  });
+  const RatingDistribution = IDL.Record({
+    'star1' : IDL.Nat,
+    'star2' : IDL.Nat,
+    'star3' : IDL.Nat,
+    'star4' : IDL.Nat,
+    'star5' : IDL.Nat,
+  });
   const SearchParams = IDL.Record({
     'categories' : IDL.Vec(IDL.Text),
     'brands' : IDL.Vec(IDL.Text),
@@ -306,19 +421,33 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     'addToCart' : IDL.Func([IDL.Nat, IDL.Nat], [CartItem], []),
+    'cancelOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], []),
     'clearCart' : IDL.Func([], [], []),
     'createAddress' : IDL.Func([CreateAddressRequest], [UserAddress], []),
     'createOrder' : IDL.Func([CreateOrderRequest], [Order], []),
+    'createReview' : IDL.Func([CreateReviewRequest], [Review], []),
+    'getAllOrders' : IDL.Func([IDL.Nat, IDL.Nat], [PaginatedOrders], ['query']),
     'getBrands' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'getCart' : IDL.Func([], [IDL.Vec(CartItemView)], ['query']),
     'getDeals' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getFeaturedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], ['query']),
+    'getOrderNotifications' : IDL.Func(
+        [],
+        [IDL.Vec(OrderNotification)],
+        ['query'],
+      ),
     'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
+    'getProductReviews' : IDL.Func([IDL.Nat], [IDL.Vec(Review)], ['query']),
     'getProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getProductsByCategory' : IDL.Func(
         [Category],
         [IDL.Vec(Product)],
+        ['query'],
+      ),
+    'getRatingDistribution' : IDL.Func(
+        [IDL.Nat],
+        [RatingDistribution],
         ['query'],
       ),
     'getSavedAddresses' : IDL.Func([], [IDL.Vec(UserAddress)], ['query']),
@@ -329,8 +458,15 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getUserOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'removeFromCart' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'returnOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], []),
     'searchProducts' : IDL.Func([SearchParams], [SearchResult], ['query']),
+    'toggleHelpfulVote' : IDL.Func([IDL.Nat, IDL.Bool], [], []),
     'updateCartQuantity' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Bool], []),
+    'updateOrderStatus' : IDL.Func(
+        [IDL.Nat, OrderStatus],
+        [IDL.Opt(Order)],
+        [],
+      ),
   });
 };
 

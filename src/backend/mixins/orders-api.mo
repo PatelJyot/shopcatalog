@@ -11,6 +11,7 @@ mixin (
   orders : List.List<OrderTypes.Order>,
   cartItems : List.List<CartTypes.CartItem>,
   products : List.List<ProductTypes.Product>,
+  notifications : List.List<OrderTypes.OrderNotification>,
 ) {
   var nextOrderId : Nat = 1;
 
@@ -28,5 +29,29 @@ mixin (
 
   public shared query ({ caller }) func getUserOrders() : async [OrderTypes.Order] {
     OrdersLib.getUserOrders(orders, caller);
+  };
+
+  public shared ({ caller }) func updateOrderStatus(orderId : Nat, newStatus : OrderTypes.OrderStatus) : async ?OrderTypes.Order {
+    if (caller == (Principal.anonymous())) Runtime.trap("Not authenticated");
+    OrdersLib.updateOrderStatus(orders, notifications, orderId, newStatus);
+  };
+
+  public shared query ({ caller = _ }) func getAllOrders(offset : Nat, limit : Nat) : async OrderTypes.PaginatedOrders {
+    OrdersLib.getAllOrders(orders, offset, limit);
+  };
+
+  public shared ({ caller }) func cancelOrder(orderId : Nat) : async ?OrderTypes.Order {
+    if (caller == (Principal.anonymous())) Runtime.trap("Not authenticated");
+    OrdersLib.cancelOrder(orders, notifications, caller, orderId);
+  };
+
+  public shared ({ caller }) func returnOrder(orderId : Nat) : async ?OrderTypes.Order {
+    if (caller == (Principal.anonymous())) Runtime.trap("Not authenticated");
+    OrdersLib.returnOrder(orders, notifications, caller, orderId);
+  };
+
+  public shared query ({ caller }) func getOrderNotifications() : async [OrderTypes.OrderNotification] {
+    if (caller == (Principal.anonymous())) Runtime.trap("Not authenticated");
+    OrdersLib.getOrderNotifications(notifications, caller);
   };
 }

@@ -32,11 +32,14 @@ module {
   };
 
   public type OrderStatus = {
-    #Pending;
-    #Confirmed;
-    #Shipped;
-    #Delivered;
-    #Cancelled;
+    #placed;
+    #confirmed;
+    #packed;
+    #shipped;
+    #outForDelivery;
+    #delivered;
+    #cancelled;
+    #returned;
   };
 
   public type Order = {
@@ -51,7 +54,24 @@ module {
     paymentMethod : PaymentMethod;
     paymentStatus : PaymentStatus;
     orderStatus : OrderStatus;
+    trackingNumber : ?Text;
+    estimatedDeliveryDate : ?Time.Time;
     createdAt : Time.Time;
+    updatedAt : Time.Time;
+  };
+
+  public type OrderNotification = {
+    orderId : Nat;
+    userId : Principal;
+    oldStatus : OrderStatus;
+    newStatus : OrderStatus;
+    timestamp : Time.Time;
+    message : Text;
+  };
+
+  public type PaginatedOrders = {
+    orders : [Order];
+    total : Nat;
   };
 
   public type CreateOrderRequest = {

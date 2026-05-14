@@ -45,6 +45,8 @@ module {
       case (#Card _) #Paid;
     };
 
+    let now = Time.now();
+    let sevenDaysNs : Int = 7 * 24 * 3600 * 1_000_000_000;
     let order : Order = {
       id = nextId;
       userId;
@@ -56,8 +58,11 @@ module {
       shippingAddress = req.shippingAddress;
       paymentMethod = req.paymentMethod;
       paymentStatus;
-      orderStatus = #Pending;
-      createdAt = Time.now();
+      orderStatus = #placed;
+      trackingNumber = null;
+      estimatedDeliveryDate = ?(now + sevenDaysNs);
+      createdAt = now;
+      updatedAt = now;
     };
     orders.add(order);
     order;
@@ -69,6 +74,116 @@ module {
     orderId : Nat,
   ) : ?Order {
     orders.find(func(o) { o.id == orderId and Principal.equal(o.userId, userId) });
+  };
+
+  public func updateOrderStatus(
+    orders : List.List<Order>,
+    notifications : List.List<OrderTypes.OrderNotification>,
+    orderId : Nat,
+    newStatus : OrderTypes.OrderStatus,
+  ) : ?Order {
+    switch (orders.findIndex(func(o) { o.id == orderId })) {
+      case null null;
+      case (?idx) {
+        let old = orders.at(idx);
+        let now = Time.now();
+        let updated : Order = { old with orderStatus = newStatus; updatedAt = now };
+        orders.put(idx, updated);
+        let note : OrderTypes.OrderNotification = {
+          orderId;
+          userId = old.userId;
+          oldStatus = old.orderStatus;
+          newStatus;
+          timestamp = now;
+          message = "Your order status has been updated.";
+        };
+        notifications.add(note);
+        ?updated;
+      };
+    };
+  };
+
+  public func getAllOrders(
+    orders : List.List<Order>,
+    offset : Nat,
+    limit : Nat,
+  ) : OrderTypes.PaginatedOrders {
+    let total = orders.size();
+    let arr = orders.sliceToArray(offset.toInt(), (offset + limit).toInt());
+    { orders = arr; total };
+  };
+
+  public func cancelOrder(
+    orders : List.List<Order>,
+    notifications : List.List<OrderTypes.OrderNotification>,
+    userId : Principal,
+    orderId : Nat,
+  ) : ?Order {
+    switch (orders.findIndex(func(o) { o.id == orderId and Principal.equal(o.userId, userId) })) {
+      case null null;
+      case (?idx) {
+        let old = orders.at(idx);
+        let cancellable = switch (old.orderStatus) {
+          case (#placed) true;
+          case (#confirmed) true;
+          case _ false;
+        };
+        if (not cancellable) Runtime.trap("Order cannot be cancelled at this stage");
+        let now = Time.now();
+        let updated : Order = { old with orderStatus = #cancelled; updatedAt = now };
+        orders.put(idx, updated);
+        let note : OrderTypes.OrderNotification = {
+          orderId;
+          userId;
+          oldStatus = old.orderStatus;
+          newStatus = #cancelled;
+          timestamp = now;
+          message = "Your order has been cancelled.";
+        };
+        notifications.add(note);
+        ?updated;
+      };
+    };
+  };
+
+  public func returnOrder(
+    orders : List.List<Order>,
+    notifications : List.List<OrderTypes.OrderNotification>,
+    userId : Principal,
+    orderId : Nat,
+  ) : ?Order {
+    switch (orders.findIndex(func(o) { o.id == orderId and Principal.equal(o.userId, userId) })) {
+      case null null;
+      case (?idx) {
+        let old = orders.at(idx);
+        switch (old.orderStatus) {
+          case (#delivered) {};
+          case _ Runtime.trap("Order is not eligible for return");
+        };
+        let sevenDaysNs : Int = 7 * 24 * 3600 * 1_000_000_000;
+        let now = Time.now();
+        if (now - old.updatedAt > sevenDaysNs) Runtime.trap("Return window has expired");
+        let updated : Order = { old with orderStatus = #returned; updatedAt = now };
+        orders.put(idx, updated);
+        let note : OrderTypes.OrderNotification = {
+          orderId;
+          userId;
+          oldStatus = old.orderStatus;
+          newStatus = #returned;
+          timestamp = now;
+          message = "Your return request has been initiated.";
+        };
+        notifications.add(note);
+        ?updated;
+      };
+    };
+  };
+
+  public func getOrderNotifications(
+    notifications : List.List<OrderTypes.OrderNotification>,
+    userId : Principal,
+  ) : [OrderTypes.OrderNotification] {
+    notifications.filter(func(n) { Principal.equal(n.userId, userId) }).toArray();
   };
 
   public func getUserOrders(
